@@ -2,67 +2,135 @@ import { connectSheet } from "./sheet.js";
 
 const SPREADSHEET_ID = process.env.SHEET_ID;
 
-export default async function handler(req, res) {
-  const sheets = await connectSheet();
+// Função para registrar movimentação
+async function registrarMovimentacao(sheets, dados) {
+  try {
+    const movimento = [
+      new Date().toISOString(),
+      dados.tipo, // 'entrada' ou 'saida'
+      dados.id,
+      dados.nome,
+      dados.quantidade,
+      dados.motivo || (dados.tipo === 'entrada' ? 'Entrada manual' : 'Saída manual'),
+      dados.usuario || 'Sistema'
+    ];
 
-  // LISTAR MOVIMENTAÇÕES
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: "Movements!A2",
+      valueInputOption: "RAW",
+      requestBody: {
+        values: [movimento],
+      },
+    });
+  } catch (error) {
+    console.error("Erro ao registrar movimentação:", error);
+  }
+}
+
+export default async function handler(req, res) {
   if (req.method === "GET") {
     try {
+      const sheets = await connectSheet();
       const result = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
-        range: "Movements!A2:G", // Data, Tipo, Item, Nome, Qtd, Motivo, Usuário
+        range: "Items!A2:G",
       });
-
-      const rows = result.data.values || [];
       
-      // Ordenar por data (mais recente primeiro)
-      const movements = rows
-        .map((row, index) => ({
-          id: `mov-${index + 2}`,
-          data: row[0] || new Date().toISOString(),
-          tipo: row[1] || 'saida',
-          itemId: row[2] || '',
-          nomeItem: row[3] || '',
-          quantidade: parseInt(row[4]) || 0,
-          motivo: row[5] || '',
-          usuario: row[6] || 'Sistema'
-        }))
-        .sort((a, b) => new Date(b.data) - new Date(a.data));
-
-      return res.status(200).json(movements);
-    } catch (e) {
-      return res.status(500).json({ error: e.message });
+      const items = result.data.values || [];
+      return res.status(200).json(items);
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
     }
   }
 
-  // REGISTRAR NOVA MOVIMENTAÇÃO
   if (req.method === "POST") {
-    try {
-      const { tipo, itemId, nomeItem, quantidade, motivo, usuario } = req.body;
-      
-      const movimento = [
-        new Date().toISOString(),
-        tipo,
-        itemId,
-        nomeItem,
-        quantidade,
-        motivo || (tipo === 'entrada' ? 'Entrada manual' : 'Saída manual'),
-        usuario || 'Sistema'
-      ];
+    const sheets = await connectSheet();
+    const body = req.body;
 
-      await sheets.spreadsheets.values.append({
-        spreadsheetId: SPREADSHEET_ID,
-        range: "Movements!A2",
-        valueInputOption: "RAW",
-        requestBody: {
-          values: [movimento],
-        },
-      });
+    // ROTA DE SAÍDA
+    if (body.action === 'saida') {
+      try {
+        // 1. Ler todos os itens
+        const readResult = await sheets.spreadsheets.values.get({
+          spreadsheetId: SPREADSHEET_ID,
+          range: "Items!A2:G",
+        });
 
-      return res.status(201).json({ ok: true });
-    } catch (e) {
-      return res.status(500).json({ error: e.message });
+        const rows = readResult.data.values || [];
+        const rowIndex = rows.findIndex(r => r[0] === body.id);
+
+        if (rowIndex === -1) {
+          return res.status(404).json({ error: "Item não encontrado" });
+        }
+
+        const currentQty = parseInt(rows[rowIndex][3]) || 0;
+        const outputQty = parseInt(body.quantidade) || 0;
+
+        // Validações
+        if (isNaN(outputQty) || outputQty <= 0) {
+          return res.status(400).json({ error: "Quantidade inválida" });
+        }
+
+        if (currentQty < outputQty) {
+          return res.status(400).json({ 
+            error: `Estoque insuficiente. Disponível: ${currentQty}` 
+          });
+        }
+
+        // 2. Atualizar estoque
+        const newQty = currentQty - outputQty;
+        
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: SPREADSHEET_ID,
+          range: `Items!D${rowIndex + 2}`,
+          valueInputOption: "RAW",
+          requestBody: { values: [[newQty]] }
+        });
+
+        // 3. Registrar movimentação
+        await registrarMovimentacao(sheets, {
+          tipo: 'saida',
+          id: body.id,
+          nome: rows[rowIndex][1] || body.nome,
+          quantidade: outputQty,
+          motivo: body.motivo || 'Saída manual',
+          usuario: body.usuario || 'Usuário'
+        });
+
+        return res.status(200).json({ 
+          ok: true, 
+          newQty,
+          message: "Saída registrada com sucesso!"
+        });
+
+      } catch (error) {
+        return res.status(500).json({ error: error.message });
+      }
     }
+
+    // ROTA DE ENTRADA
+    if (body.action === 'entrada') {
+      try {
+        // ... seu código de entrada existente ...
+        
+        // Registrar movimentação de entrada
+        await registrarMovimentacao(sheets, {
+          tipo: 'entrada',
+          id: body.id,
+          nome: body.nome,
+          quantidade: body.quantidade,
+          motivo: 'Entrada manual',
+          usuario: body.usuario || 'Usuário'
+        });
+
+        return res.status(200).json({ ok: true });
+      } catch (error) {
+        return res.status(500).json({ error: error.message });
+      }
+    }
+
+    return res.status(400).json({ error: "Ação não especificada" });
   }
 
   return res.status(405).json({ error: "Method not allowed" });
