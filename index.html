@@ -3,12 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventário Pro</title>
+    <title>LogiTrack Web</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
     <script>
@@ -17,218 +15,418 @@
                 extend: {
                     colors: {
                         brand: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            900: '#0c4a6e',
+                            500: '#1a73e8', // Azul Google/LogiTrack
+                            600: '#1557b0',
+                            900: '#0d47a1',
                         }
                     }
                 }
             }
         }
-  <script>
-        // --- CONFIGURAÇÃO DA API VERCEL ---
+    </script>
+    <style>
+        body { background-color: #F3F4F6; } /* Fundo cinza claro igual imagem */
+        .glass-panel { background: white; border: 1px solid #E5E7EB; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="text-slate-800 font-sans antialiased">
+
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <div class="bg-brand-500 text-white p-1.5 rounded-lg">
+                            <i class="fa-solid fa-box"></i>
+                        </div>
+                        <span class="font-bold text-xl tracking-tight text-slate-900">LogiTrack Web</span>
+                    </div>
+                    <div class="hidden md:flex ml-10 space-x-8">
+                        <button onclick="switchTab('dashboard')" class="text-slate-500 hover:text-brand-500 px-3 py-2 text-sm font-medium transition-colors">Dashboard</button>
+                        <button onclick="switchTab('estoque')" class="text-brand-600 border-b-2 border-brand-600 px-3 py-2 text-sm font-medium">Estoque</button>
+                        <button onclick="switchTab('entrada')" class="text-slate-500 hover:text-brand-500 px-3 py-2 text-sm font-medium transition-colors">Entradas</button>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button class="p-2 text-slate-400 hover:text-slate-500 relative">
+                        <i class="fa-solid fa-bell"></i>
+                        <span class="absolute top-1.5 right-1.5 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+                    </button>
+                    <button class="bg-brand-500 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-brand-600 transition shadow-sm" onclick="switchTab('entrada')">
+                        + Perfil
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <div id="view-estoque" class="space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-900">Estoque e Previsão</h1>
+                    <p class="text-slate-500 text-sm mt-1">Gerenciamento de inventário com alertas inteligentes.</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="fetchItems()" class="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50">
+                        <i class="fa-solid fa-sync mr-2"></i>Atualizar
+                    </button>
+                    <button onclick="switchTab('entrada')" class="bg-brand-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-600 shadow-sm shadow-brand-500/30">
+                        + Novo Item
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div class="glass-panel p-4 rounded-xl">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-medium text-slate-500 uppercase">Total de Itens</p>
+                            <h3 class="text-2xl font-bold text-slate-900 mt-1" id="kpi-total">0</h3>
+                        </div>
+                        <div class="p-2 bg-blue-50 text-brand-500 rounded-lg"><i class="fa-solid fa-cubes"></i></div>
+                    </div>
+                </div>
+                <div class="glass-panel p-4 rounded-xl border-l-4 border-l-red-500">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-medium text-slate-500 uppercase">Itens Críticos</p>
+                            <h3 class="text-2xl font-bold text-slate-900 mt-1" id="kpi-critical">0</h3>
+                        </div>
+                        <div class="p-2 bg-red-50 text-red-500 rounded-lg"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-2 rounded-xl border border-slate-200 flex flex-col sm:flex-row gap-2">
+                <div class="relative flex-1">
+                    <i class="fa-solid fa-search absolute left-3 top-3 text-slate-400"></i>
+                    <input type="text" id="searchInput" onkeyup="filterItems()" placeholder="Buscar por ID, nome, categoria..." class="w-full pl-10 pr-4 py-2 rounded-lg border-none focus:ring-0 text-sm bg-slate-50 text-slate-900">
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ID / SKU</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Produto</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Categoria</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Qtd</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Local</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTableBody" class="bg-white divide-y divide-slate-200">
+                            <tr>
+                                <td colspan="6" class="px-6 py-10 text-center text-slate-500">
+                                    <i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-brand-500"></i><br>
+                                    Carregando dados da planilha...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-entrada" class="hidden max-w-3xl mx-auto">
+            <div class="mb-6">
+                <nav class="flex text-sm text-slate-500 mb-2">
+                    <span>Home</span> <span class="mx-2">/</span> <span>Estoque</span> <span class="mx-2">/</span> <span class="text-slate-900 font-medium">Nova Entrada</span>
+                </nav>
+                <h1 class="text-3xl font-bold text-slate-900">Registrar Entrada de Item</h1>
+                <p class="text-slate-500 mt-2">Preencha o formulário para adicionar novos itens ao estoque.</p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+                <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6 flex gap-3 items-start">
+                    <i class="fa-solid fa-circle-info text-slate-400 mt-0.5"></i>
+                    <p class="text-sm text-slate-600">O ID do item pode ser digitado manualmente ou escaneado via câmera.</p>
+                </div>
+
+                <form id="entryForm" onsubmit="event.preventDefault(); saveItem();" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">ID do Item / SKU</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="itemId" class="block w-full rounded-lg border-slate-300 border px-3 py-2.5 bg-slate-50 focus:bg-white focus:border-brand-500 focus:ring-brand-500 sm:text-sm font-mono" placeholder="ITEM-XXXX-XXX" required>
+                                <button type="button" onclick="startScanner()" class="bg-slate-800 text-white px-3 py-2 rounded-lg hover:bg-slate-700 transition-colors" title="Ler Código de Barras">
+                                    <i class="fa-solid fa-barcode"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Data de Entrada</label>
+                            <input type="date" id="itemDate" class="block w-full rounded-lg border-slate-300 border px-3 py-2.5 focus:border-brand-500 focus:ring-brand-500 sm:text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1">Nome do Produto</label>
+                        <input type="text" id="itemName" class="block w-full rounded-lg border-slate-300 border px-3 py-2.5 focus:border-brand-500 focus:ring-brand-500 sm:text-sm" placeholder="Ex: Parafusos Inox 10mm" required>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Categoria</label>
+                            <select id="itemCategory" class="block w-full rounded-lg border-slate-300 border px-3 py-2.5 bg-white focus:border-brand-500 focus:ring-brand-500 sm:text-sm">
+                                <option value="Geral">Geral</option>
+                                <option value="Eletrônicos">Eletrônicos</option>
+                                <option value="Mecânica">Mecânica</option>
+                                <option value="Embalagem">Embalagem</option>
+                                <option value="Químicos">Químicos</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Local/Armazém</label>
+                            <input type="text" id="itemLocal" class="block w-full rounded-lg border-slate-300 border px-3 py-2.5 focus:border-brand-500 focus:ring-brand-500 sm:text-sm" placeholder="Ex: Corredor A, Prateleira 2">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Quantidade</label>
+                            <input type="number" id="itemQty" class="block w-full rounded-lg border-slate-300 border px-3 py-2.5 focus:border-brand-500 focus:ring-brand-500 sm:text-sm" placeholder="0" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Status Inicial</label>
+                            <select id="itemStatus" class="block w-full rounded-lg border-slate-300 border px-3 py-2.5 bg-white sm:text-sm">
+                                <option value="OK">OK (Disponível)</option>
+                                <option value="Atenção">Atenção</option>
+                                <option value="Crítico">Crítico</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 flex justify-end gap-3 border-t border-slate-100 mt-4">
+                        <button type="button" onclick="switchTab('estoque')" class="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
+                        <button type="submit" id="btnSave" class="px-6 py-2 text-sm font-bold text-white bg-brand-500 hover:bg-brand-600 rounded-lg shadow-md transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-save"></i> Registrar Entrada
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="scannerModal" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black/90 backdrop-blur-sm">
+        <div class="w-full max-w-md p-4 relative">
+            <button onclick="stopScanner()" class="absolute -top-12 right-0 text-white text-lg flex items-center gap-2 hover:text-red-400">
+                <i class="fa-solid fa-times-circle"></i> Fechar Câmera
+            </button>
+            <div id="reader" class="bg-black rounded-xl overflow-hidden border-2 border-brand-500 shadow-2xl shadow-brand-500/50"></div>
+            <p class="text-center text-white mt-4 text-sm font-medium">Aponte para o código de barras do produto</p>
+        </div>
+    </div>
+
+    <script>
+        // URL da API (Ajustado para sua estrutura Vercel)
         const API_URL = '/api/items'; 
 
-        let inventory = [];
+        let inventoryData = [];
         let html5QrcodeScanner = null;
 
-        // Inicializa a aplicação carregando do Backend
+        // Ao carregar a página
         document.addEventListener('DOMContentLoaded', () => {
+            console.log("App Iniciado");
+            
+            // Define data de hoje no formulário
+            document.getElementById('itemDate').valueAsDate = new Date();
+            
+            // Carrega dados iniciais
             fetchItems();
         });
 
-        // --- 1. COMUNICAÇÃO COM O BACKEND (API/SHEETS) ---
+        // --- 1. NAVEGAÇÃO ENTRE TELAS ---
+        function switchTab(tabName) {
+            // Esconde tudo
+            document.getElementById('view-estoque').classList.add('hidden');
+            document.getElementById('view-entrada').classList.add('hidden');
+            
+            // Remove ativo dos botões (Visual simples)
+            const buttons = document.querySelectorAll('nav button');
+            buttons.forEach(btn => btn.classList.remove('text-brand-600', 'border-b-2', 'border-brand-600'));
 
-        async function fetchItems() {
-            const loadingState = document.getElementById('emptyState');
-            // Feedback de carregamento
-            loadingState.innerHTML = '<div class="flex flex-col items-center gap-2"><i class="fa-solid fa-spinner fa-spin text-2xl text-brand-600"></i><p class="text-slate-500">Sincronizando com a planilha...</p></div>';
-            loadingState.classList.remove('hidden');
-
-            try {
-                const response = await fetch(API_URL);
-                if (!response.ok) throw new Error('Falha ao buscar dados');
-                
-                const rows = await response.json();
-
-                // ADAPTADOR: Transforma Array do Sheets em Objeto do Frontend
-                // Baseado no seu api/items.js: [id, nome, categoria, quantidade, local, status, previsao]
-                inventory = rows.map(row => ({
-                    id: row[0],
-                    name: row[1],
-                    category: row[2],
-                    qty: row[3],
-                    code: row[4], // Usaremos o campo 'local' da planilha para guardar o CÓDIGO/SKU
-                    // status: row[5], // Campos extras que não aparecem no card mas existem no banco
-                    updatedAt: new Date().toISOString() // A planilha não tem data de update, geramos uma fake visual
-                }));
-
-                renderItems();
-
-            } catch (error) {
-                console.error("Erro:", error);
-                alert("Erro ao carregar dados. Verifique se a API está rodando.");
-                loadingState.innerHTML = '<p class="text-red-500">Erro de conexão.</p>';
+            // Mostra a tela certa
+            if (tabName === 'estoque' || tabName === 'dashboard') {
+                document.getElementById('view-estoque').classList.remove('hidden');
+                fetchItems(); // Recarrega dados ao voltar
+            } else if (tabName === 'entrada') {
+                document.getElementById('view-entrada').classList.remove('hidden');
             }
         }
 
-        async function saveToBackend(newItem) {
-            // Prepara o objeto no formato que seu api/items.js (POST) espera
-            const payload = {
-                id: newItem.id,
-                nome: newItem.name,
-                categoria: newItem.category,
-                quantidade: newItem.qty,
-                local: newItem.code, // Enviando o SKU para o campo 'local'
-                status: 'Ativo',     // Valor padrão
-                previsao: '-'        // Valor padrão
+        // --- 2. INTEGRAÇÃO COM BACKEND (GET) ---
+        async function fetchItems() {
+            const tableBody = document.getElementById('inventoryTableBody');
+            
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error("Erro na API");
+                
+                const rawData = await response.json();
+                console.log("Dados recebidos:", rawData);
+
+                // Mapeia Array do Sheets para Objeto
+                // SEU BACKEND: [id, nome, categoria, quantidade, local, status, previsao]
+                inventoryData = rawData.map(row => ({
+                    id: row[0] || 'N/A',
+                    name: row[1] || 'Sem Nome',
+                    category: row[2] || '-',
+                    qty: parseInt(row[3]) || 0,
+                    local: row[4] || '-',
+                    status: row[5] || 'OK',
+                    previsao: row[6] || '-'
+                }));
+
+                renderTable(inventoryData);
+                updateKPIs();
+
+            } catch (error) {
+                console.error(error);
+                tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-red-500">Erro ao carregar conexão. <br> Verifique se 'api/items.js' está configurado corretamente.</td></tr>`;
+            }
+        }
+
+        // --- 3. RENDERIZAÇÃO DA TABELA ---
+        function renderTable(items) {
+            const tableBody = document.getElementById('inventoryTableBody');
+            tableBody.innerHTML = '';
+
+            if (items.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400">Nenhum item encontrado.</td></tr>`;
+                return;
+            }
+
+            items.forEach(item => {
+                // Lógica de cores para Status
+                let statusClass = 'bg-green-100 text-green-800';
+                if(item.status === 'Crítico' || item.qty <= 5) statusClass = 'bg-red-100 text-red-800';
+                else if(item.status === 'Atenção') statusClass = 'bg-yellow-100 text-yellow-800';
+
+                const row = `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-slate-600 font-bold">#${item.id}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-slate-900">${item.name}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${item.category}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 font-bold">${item.qty}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">
+                                ${item.status}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500"><i class="fa-solid fa-location-dot mr-1"></i> ${item.local}</td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        }
+
+        // --- 4. SALVAR ITEM (POST) ---
+        async function saveItem() {
+            const btn = document.getElementById('btnSave');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Salvando...';
+            btn.disabled = true;
+
+            // Coleta dados do formulário
+            const newItem = {
+                id: document.getElementById('itemId').value,
+                nome: document.getElementById('itemName').value,
+                categoria: document.getElementById('itemCategory').value,
+                quantidade: document.getElementById('itemQty').value,
+                local: document.getElementById('itemLocal').value,
+                status: document.getElementById('itemStatus').value,
+                previsao: document.getElementById('itemDate').value // Usando campo Previsão para guardar a Data de Entrada
             };
 
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(newItem)
                 });
 
                 if (!response.ok) throw new Error('Erro ao salvar');
-                
-                // Sucesso: Recarrega a lista para garantir sincronia
-                // Otimização: Adiciona localmente para feedback instantâneo e depois busca
-                inventory.unshift(newItem); 
-                renderItems();
-                
+
+                // Sucesso
+                alert("Item registrado com sucesso!");
+                document.getElementById('entryForm').reset();
+                document.getElementById('itemDate').valueAsDate = new Date(); // Reseta data para hoje
+                switchTab('estoque');
+
             } catch (error) {
-                alert("Erro ao salvar na planilha: " + error.message);
+                alert("Erro ao salvar: " + error.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
         }
 
-        // --- 2. RENDERIZAÇÃO (Visual - Mantido igual) ---
-        function renderItems() {
-            const grid = document.getElementById('inventoryGrid');
-            const searchInput = document.getElementById('searchInput').value.toLowerCase();
-            const emptyState = document.getElementById('emptyState');
-            const totalLabel = document.getElementById('totalItems');
-
-            grid.innerHTML = '';
-
-            const filtered = inventory.filter(item => 
-                (item.name && item.name.toLowerCase().includes(searchInput)) || 
-                (item.code && item.code.toLowerCase().includes(searchInput))
+        // --- 5. FILTROS E KPIs ---
+        function filterItems() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = inventoryData.filter(item => 
+                item.name.toLowerCase().includes(term) || 
+                item.id.toLowerCase().includes(term) ||
+                item.category.toLowerCase().includes(term)
             );
-
-            totalLabel.innerText = filtered.length;
-
-            if (filtered.length === 0) {
-                // Se não estiver carregando (spinner), mostra msg de vazio
-                if (!emptyState.innerHTML.includes('fa-spinner')) {
-                    emptyState.innerHTML = `
-                        <div class="bg-slate-100 p-6 rounded-full mb-4"><i class="fa-solid fa-clipboard-list text-4xl text-slate-300"></i></div>
-                        <h3 class="text-lg font-medium text-slate-900">Nenhum item encontrado</h3>
-                        <p class="text-slate-500 mt-1 mb-4">Seu inventário está vazio ou a busca não retornou resultados.</p>
-                        <button onclick="openModal()" class="text-brand-600 font-medium hover:underline">Adicionar item</button>
-                    `;
-                    emptyState.classList.remove('hidden');
-                    emptyState.classList.add('flex');
-                }
-            } else {
-                emptyState.classList.add('hidden');
-                emptyState.classList.remove('flex');
-                
-                filtered.forEach(item => {
-                    let qtyColor = item.qty > 5 ? 'bg-emerald-100 text-emerald-700' : (item.qty > 0 ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700');
-                    
-                    const card = document.createElement('div');
-                    card.className = "bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow p-5 flex flex-col justify-between";
-                    card.innerHTML = `
-                        <div>
-                            <div class="flex justify-between items-start mb-2">
-                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 bg-slate-50 px-2 py-1 rounded border border-slate-100 truncate max-w-[50%]">
-                                    ${item.category}
-                                </span>
-                                <div class="flex gap-2">
-                                    <button onclick="alert('Funcionalidade de Edição requer atualização no Backend (api/items.js)')" class="text-slate-300 hover:text-brand-600 transition-colors"><i class="fa-solid fa-pen-to-square"></i></button>
-                                    <button onclick="alert('Funcionalidade de Exclusão requer atualização no Backend (api/items.js)')" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button>
-                                </div>
-                            </div>
-                            <h3 class="font-bold text-slate-800 text-lg mb-1 line-clamp-1">${item.name}</h3>
-                            <p class="text-sm text-slate-500 font-mono mb-4"><i class="fa-solid fa-barcode mr-1"></i> ${item.code || 'S/N'}</p>
-                        </div>
-                        <div class="flex items-center justify-between mt-2 pt-4 border-t border-slate-100">
-                            <span class="text-xs text-slate-400">ID: #${item.id.toString().slice(-4)}</span>
-                            <span class="${qtyColor} px-3 py-1 rounded-full text-xs font-bold">Qtd: ${item.qty}</span>
-                        </div>
-                    `;
-                    grid.appendChild(card);
-                });
-            }
+            renderTable(filtered);
         }
 
-        // --- 3. LOGICA DO MODAL E SALVAMENTO ---
-        
-        function openModal() {
-            document.getElementById('itemModal').classList.remove('hidden');
-            // Limpa form
-            document.getElementById('itemId').value = '';
-            document.getElementById('itemCode').value = '';
-            document.getElementById('itemName').value = '';
-            document.getElementById('itemQty').value = '';
+        function updateKPIs() {
+            document.getElementById('kpi-total').innerText = inventoryData.length;
+            const critical = inventoryData.filter(i => i.qty <= 5 || i.status === 'Crítico').length;
+            document.getElementById('kpi-critical').innerText = critical;
         }
 
-        function closeModal() {
-            document.getElementById('itemModal').classList.add('hidden');
-        }
-
-        function saveItem() {
-            const code = document.getElementById('itemCode').value;
-            const name = document.getElementById('itemName').value;
-            const qty = document.getElementById('itemQty').value;
-            const category = document.getElementById('itemCategory').value;
-
-            if (!name) { alert("Insira o nome."); return; }
-
-            // Cria objeto
-            const newItem = {
-                id: Date.now().toString(), // Gera ID único baseado no tempo
-                code: code || 'N/A',
-                name: name,
-                qty: qty || 0,
-                category: category
-            };
-
-            // Fecha modal visualmente primeiro (UX)
-            closeModal();
-            
-            // Envia para o Backend
-            saveToBackend(newItem);
-        }
-
-        // --- 4. SCANNER (Câmera - Mantido) ---
+        // --- 6. SCANNER DE CÓDIGO DE BARRAS ---
         function startScanner() {
-            const scannerModal = document.getElementById('scannerModal');
-            scannerModal.classList.remove('hidden');
-            if (!html5QrcodeScanner) { html5QrcodeScanner = new Html5Qrcode("reader"); }
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-            html5QrcodeScanner.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure)
-                .catch(err => { console.error(err); alert("Erro na câmera."); stopScanner(); });
-        }
+            const modal = document.getElementById('scannerModal');
+            modal.classList.remove('hidden');
+            
+            if (!html5QrcodeScanner) {
+                html5QrcodeScanner = new Html5Qrcode("reader");
+            }
 
-        function onScanSuccess(decodedText) {
-            document.getElementById('itemCode').value = decodedText;
-            stopScanner();
-            const input = document.getElementById('itemCode');
-            input.classList.add('ring-2', 'ring-green-500');
-            setTimeout(() => input.classList.remove('ring-2', 'ring-green-500'), 1000);
+            const config = { fps: 10, qrbox: { width: 250, height: 150 } }; // Box retangular para código de barras
+            
+            html5QrcodeScanner.start(
+                { facingMode: "environment" }, 
+                config, 
+                (decodedText) => {
+                    // Sucesso
+                    document.getElementById('itemId').value = decodedText;
+                    stopScanner();
+                    // Feedback visual
+                    const input = document.getElementById('itemId');
+                    input.classList.add('ring-2', 'ring-green-500');
+                    setTimeout(() => input.classList.remove('ring-2', 'ring-green-500'), 1000);
+                },
+                (errorMessage) => {
+                    // console.log(errorMessage); // Ignora erros de frame vazio
+                }
+            ).catch(err => {
+                alert("Erro ao abrir câmera: " + err);
+                stopScanner();
+            });
         }
-
-        function onScanFailure(error) { }
 
         function stopScanner() {
-            document.getElementById('scannerModal').classList.add('hidden');
+            const modal = document.getElementById('scannerModal');
+            modal.classList.add('hidden');
             if (html5QrcodeScanner) {
-                html5QrcodeScanner.stop().catch(err => console.log(err));
+                html5QrcodeScanner.stop().then(() => {
+                    console.log("Scanner parado");
+                }).catch(err => console.error(err));
             }
         }
     </script>
