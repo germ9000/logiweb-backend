@@ -1,133 +1,36 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LogiTrack Web</title>
+<nav class="flex-1 mt-6 px-3 space-y-1 overflow-y-auto">
     
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-2">Visão Geral</p>
+    <button id="nav-dashboard" onclick="navigateTo('dashboard')" class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
+        <i class="fa-solid fa-chart-pie w-5 text-center"></i> Dashboard
+    </button>
+    <button id="nav-estoque" onclick="navigateTo('estoque')" class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
+        <i class="fa-solid fa-boxes-stacked w-5 text-center"></i> Estoque
+    </button>
 
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: { 
-                        brand: { 500: '#1a73e8', 600: '#1557b0', 50: '#eff6ff' } 
-                    },
-                    fontFamily: { 
-                        sans: ['Inter', 'sans-serif'],
-                        display: ['Poppins', 'sans-serif']
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        /* Animação suave ao trocar de tela */
-        .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
-</head>
-<body class="bg-slate-50 text-slate-800 font-sans h-screen flex overflow-hidden">
+    <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-6">Operação</p>
+    <button id="nav-entradas" onclick="navigateTo('entradas')" class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
+        <i class="fa-solid fa-arrow-down w-5 text-center text-green-600"></i> Entradas
+    </button>
+    <button id="nav-saidas" onclick="navigateTo('saidas')" class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
+        <i class="fa-solid fa-arrow-up w-5 text-center text-red-600"></i> Saídas
+    </button>
 
-    <aside class="w-64 bg-white border-r border-slate-200 flex flex-col z-20 shadow-sm flex-shrink-0 transition-all duration-300" id="sidebar">
-        
-        <div class="h-16 flex items-center px-6 border-b border-slate-100 gap-3">
-            <div class="bg-brand-600 text-white p-1.5 rounded-lg shadow-sm">
-                <i class="fa-solid fa-box"></i>
-            </div>
-            <span class="font-display font-bold text-xl text-slate-800 tracking-tight">LogiTrack</span>
-        </div>
-        
-        <nav class="flex-1 mt-6 px-3 space-y-1 overflow-y-auto custom-scrollbar">
-            
-            <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-2">Visão Geral</p>
-            
-            <button id="nav-dashboard" class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg group">
-                <i class="fa-solid fa-chart-pie w-5 text-center group-hover:text-brand-600 transition-colors"></i> Dashboard
-            </button>
-            <button id="nav-estoque" class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg group">
-                <i class="fa-solid fa-boxes-stacked w-5 text-center group-hover:text-brand-600 transition-colors"></i> Estoque
-            </button>
+    <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-6">Sistema</p>
+    <button id="nav-perfil" onclick="navigateTo('perfil')" class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
+        <i class="fa-solid fa-users-gear w-5 text-center"></i> Perfis
+    </button>
+</nav>
 
-            <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-6">Operação</p>
-            
-            <button id="nav-entradas" class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg group">
-                <i class="fa-solid fa-arrow-down w-5 text-center text-green-600 group-hover:text-green-700"></i> Entradas
-            </button>
-            <button id="nav-saidas" class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg group">
-                <i class="fa-solid fa-arrow-up w-5 text-center text-red-600 group-hover:text-red-700"></i> Saídas
-            </button>
+<script type="module">
+    import { initApp, navigateTo } from './modules/router.js';
 
-            <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-6">Sistema</p>
-            
-            <button id="nav-perfil" class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg group">
-                <i class="fa-solid fa-users-gear w-5 text-center group-hover:text-brand-600"></i> Perfis / Usuários
-            </button>
-        </nav>
+    // ISSO É CRUCIAL: Torna a função visível para o onclick="" do HTML
+    window.navigateTo = navigateTo;
 
-        <div class="p-4 border-t border-slate-100 bg-slate-50/50">
-            <div class="flex items-center gap-3 px-2">
-                <div class="w-8 h-8 rounded-full bg-brand-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">
-                    A
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-xs font-bold text-slate-900 truncate">Administrador</p>
-                    <p class="text-[10px] text-slate-500 truncate">Logado</p>
-                </div>
-                <button class="text-slate-400 hover:text-red-500 transition"><i class="fa-solid fa-right-from-bracket"></i></button>
-            </div>
-        </div>
-    </aside>
-
-    <main class="flex-1 bg-slate-50 overflow-hidden relative flex flex-col">
-        <header class="bg-white border-b border-slate-200 h-16 flex items-center px-4 md:hidden justify-between">
-            <span class="font-display font-bold text-lg text-brand-600">LogiTrack</span>
-            <button class="text-slate-600"><i class="fa-solid fa-bars text-xl"></i></button>
-        </header>
-
-        <div class="flex-1 overflow-auto p-4 md:p-8 scroll-smooth" id="main-scroll">
-            <div id="app-content" class="animate-fade-in max-w-7xl mx-auto">
-                </div>
-        </div>
-
-        <div id="global-loader" class="absolute inset-0 bg-white/80 z-50 hidden flex-col items-center justify-center backdrop-blur-sm transition-opacity duration-300">
-            <div class="bg-white p-4 rounded-full shadow-lg">
-                <i class="fa-solid fa-circle-notch fa-spin text-3xl text-brand-600"></i>
-            </div>
-            <p class="text-sm text-slate-600 font-bold mt-3 animate-pulse">Processando...</p>
-        </div>
-    </main>
-
-    <script type="module">
-        import { initApp, navigateTo } from './modules/router.js';
-
-        // Torna a função global para ser usada em onlicks inline se necessário
-        window.navigateTo = navigateTo;
-
-        document.addEventListener('DOMContentLoaded', () => {
-            // Automação: Pega qualquer botão que comece com id="nav-" e liga ao roteador
-            const navButtons = document.querySelectorAll('[id^="nav-"]');
-            
-            navButtons.forEach(btn => {
-                // Se o ID for 'nav-dashboard', a rota vira 'dashboard'
-                const route = btn.id.replace('nav-', '');
-                btn.onclick = () => {
-                    navigateTo(route);
-                    // Mobile UX: Fecha menu se estiver no celular (futuro)
-                };
-            });
-
-            // Inicia o app na tela padrão
-            initApp();
-        });
-    </script>
+    document.addEventListener('DOMContentLoaded', () => {
+        initApp();
+    });
+</script>
 </body>
 </html>
