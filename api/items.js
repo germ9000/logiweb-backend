@@ -1,54 +1,41 @@
-import { connectSheet } from "./sheet.js";
+// No seu bloco POST existente em api/items.js, adicione lógica para tipo de movimento
+// Se o frontend enviar { action: 'saida', id: '...', qty: 5 }
 
-export const config = {
-  api: {
-    bodyParser: true,
-  },
-};
+if (req.method === "POST") {
+    const body = req.body;
 
-const SPREADSHEET_ID = process.env.SHEET_ID;
+    // ROTA DE SAÍDA (ATUALIZAR ESTOQUE)
+    if (body.action === 'saida') {
+        // 1. Ler todos os itens para achar a linha correta
+        const readResult = await sheets.spreadsheets.values.get({
+             spreadsheetId: SPREADSHEET_ID,
+             range: "Items!A2:G", 
+        });
+        const rows = readResult.data.values || [];
+        const rowIndex = rows.findIndex(r => r[0] === body.id); // r[0] é o ID
 
-export default async function handler(req, res) {
-  try {
-    const sheets = await connectSheet();
+        if (rowIndex === -1) return res.status(404).json({ error: "Item não encontrado" });
 
-    if (req.method === "GET") {
-      const result = await sheets.spreadsheets.values.get({
-        spreadsheetId: SPREADSHEET_ID,
-        range: "Items!A2:G",
-      });
+        const currentQty = parseInt(rows[rowIndex][3]); // Assumindo col 3 é Quantidade
+        const outputQty = parseInt(body.quantidade);
 
-      const rows = result.data.values || [];
-      return res.status(200).json(rows);
+        if (currentQty < outputQty) {
+            return res.status(400).json({ error: "Estoque insuficiente" });
+        }
+
+        // 2. Atualizar a célula específica
+        const newQty = currentQty - outputQty;
+        // A planilha começa na linha 1, dados na 2. O array começa em 0.
+        // Linha real = rowIndex + 2
+        await sheets.spreadsheets.values.update({
+            spreadsheetId: SPREADSHEET_ID,
+            range: `Items!D${rowIndex + 2}`, // Assumindo D é a coluna de Quantidade
+            valueInputOption: "RAW",
+            requestBody: { values: [[newQty]] }
+        });
+
+        return res.status(200).json({ ok: true, newQty });
     }
 
-    if (req.method === "POST") {
-      const body = req.body;
-
-      await sheets.spreadsheets.values.append({
-        spreadsheetId: SPREADSHEET_ID,
-        range: "Items!A2",
-        valueInputOption: "RAW",
-        requestBody: {
-          values: [
-            [
-              body.id,
-              body.nome,
-              body.categoria,
-              body.quantidade,
-              body.local,
-              body.status,
-              body.previsao,
-            ],
-          ],
-        },
-      });
-
-      return res.status(201).json({ ok: true });
-    }
-
-    return res.status(405).json({ error: "Method not allowed" });
-  } catch (e) {
-    return res.status(500).json({ error: e.message });
-  }
+    // ... (Mantenha seu código de criar item novo aqui) ...
 }
