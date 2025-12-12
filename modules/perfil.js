@@ -72,11 +72,10 @@ export async function renderPerfil() {
                 <th class="p-4">Email</th>
                 <th class="p-4">Permissão</th>
                 <th class="p-4 text-right">Status</th>
-                ${isAdmin ? '<th class="p-4 text-right">Ações</th>' : ''}
               </tr>
             </thead>
             <tbody id="tabela-usuarios">
-              <tr><td colspan="${isAdmin ? '5' : '4'}" class="p-8 text-center text-slate-400">
+              <tr><td colspan="4" class="p-8 text-center text-slate-400">
                 <i class="fa-solid fa-spinner fa-spin mr-2"></i>Carregando usuários...
               </td></tr>
             </tbody>
@@ -140,11 +139,10 @@ async function carregarUsuarios() {
     const users = await apiFetch('/api/users');
     const tbody = document.getElementById('tabela-usuarios');
     const userAtual = JSON.parse(localStorage.getItem('logiUser') || '{}');
-    const isAdmin = userAtual.role === 'admin';
     
     if (!users || users.length === 0) {
       tbody.innerHTML = `
-        <tr><td colspan="${isAdmin ? '5' : '4'}" class="p-8 text-center text-slate-500">
+        <tr><td colspan="4" class="p-8 text-center text-slate-500">
           <i class="fa-solid fa-users-slash text-2xl mb-3 block text-slate-300"></i>
           Nenhum usuário encontrado.
         </td></tr>`;
@@ -177,44 +175,14 @@ async function carregarUsuarios() {
               <i class="fa-solid fa-circle-check mr-1 text-xs"></i> Ativo
             </span>
           </td>
-          ${isAdmin && !isCurrentUser ? `
-            <td class="p-4 text-right">
-              <button class="text-red-500 hover:text-red-700 p-2" onclick="excluirUsuario(${user.id}, '${user.nome}')" title="Excluir usuário">
-                <i class="fa-solid fa-trash"></i>
-              </button>
-            </td>
-          ` : isAdmin ? '<td class="p-4 text-right"></td>' : ''}
         </tr>
       `;
     }).join('');
-
-    // Adicionar função global para excluir
-    if (isAdmin) {
-      window.excluirUsuario = async (linha, nome) => {
-        if (!confirm(`Tem certeza que deseja excluir o usuário "${nome}"? Esta ação não pode ser desfeita.`)) {
-          return;
-        }
-        
-        try {
-          await apiFetch('/api/users', {
-            method: 'DELETE',
-            body: JSON.stringify({ linha })
-          });
-          
-          showToast(`Usuário "${nome}" excluído com sucesso!`, 'success');
-          await carregarUsuarios();
-        } catch (error) {
-          // Erro já tratado
-        }
-      };
-    }
     
   } catch (e) {
     const tbody = document.getElementById('tabela-usuarios');
-    const isAdmin = JSON.parse(localStorage.getItem('logiUser') || '{}').role === 'admin';
-    
     tbody.innerHTML = `
-      <tr><td colspan="${isAdmin ? '5' : '4'}" class="p-4 text-center text-red-500">
+      <tr><td colspan="4" class="p-4 text-center text-red-500">
         <i class="fa-solid fa-triangle-exclamation mr-2"></i>Erro ao carregar usuários: ${e.message}
       </td></tr>`;
   }
