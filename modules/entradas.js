@@ -220,6 +220,39 @@ function iniciarLeituraBarcode() {
         }
 
         // Adicione este campo no HTML do formulário:
+`
+<div>
+    <label class="block text-sm font-bold text-slate-700 mb-1">Categoria</label>
+    <div class="flex gap-2">
+        <select id="in-cat" class="flex-1 border-slate-300 rounded-lg p-2.5 bg-white">
+            <option value="">Carregando categorias...</option>
+        </select>
+        <button type="button" id="btn-nova-cat" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2.5 rounded-lg">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+    </div>
+</div>
 
+<!-- Modal para nova categoria -->
+<div id="modal-nova-categoria" class="hidden fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-md w-full">
+        <div class="p-6 border-b border-slate-200">
+            <h3 class="text-xl font-bold text-slate-900">Nova Categoria</h3>
+        </div>
+        <div class="p-6">
+            <input type="text" id="nova-cat-nome" class="w-full border-slate-300 rounded-lg p-2.5 mb-4" placeholder="Nome da categoria">
+            <textarea id="nova-cat-desc" class="w-full border-slate-300 rounded-lg p-2.5" rows="3" placeholder="Descrição (opcional)"></textarea>
+        </div>
+        <div class="p-6 border-t border-slate-200 flex justify-end gap-3">
+            <button type="button" id="btn-cancelar-cat" class="px-4 py-2 text-slate-500 font-bold hover:bg-slate-50 rounded-lg">
+                Cancelar
+            </button>
+            <button type="button" id="btn-salvar-cat" class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg">
+                Salvar
+            </button>
+        </div>
+    </div>
+</div>
+`
     });
 }
