@@ -1,14 +1,12 @@
-
-  {
-  "name": "logiweb-backend",
+{
+  "name": "logitrack-web",
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "googleapis": "^131.0.0",
-    "bcryptjs": "^2.4.3"
+    "googleapis": "^131.0.0"
   },
   "scripts": {
-    "dev": "node server.js",
-    "start": "node server.js"
+    "dev": "vercel dev",
+    "start": "vercel dev"
   }
 }
