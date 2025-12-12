@@ -174,4 +174,31 @@ export default async function handler(req, res) {
   }
 
   return res.status(405).json({ error: "Method not allowed" });
+}// Função para verificar se item já existe
+async function verificarItemExistente(sheets, id, codigoBarras = '') {
+    try {
+        const result = await sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: "Items!A2:H", // Incluindo coluna H (código de barras)
+        });
+
+        const rows = result.data.values || [];
+        
+        // Verificar por ID
+        const porId = rows.findIndex(row => row[0] === id);
+        
+        // Verificar por código de barras (se fornecido)
+        const porCodigo = codigoBarras ? 
+            rows.findIndex(row => row[7] && row[7] === codigoBarras) : -1;
+        
+        return {
+            existe: porId !== -1 || porCodigo !== -1,
+            linhaId: porId,
+            linhaCodigo: porCodigo,
+            item: porId !== -1 ? rows[porId] : (porCodigo !== -1 ? rows[porCodigo] : null)
+        };
+    } catch (error) {
+        console.error("Erro ao verificar item:", error);
+        return { existe: false, linhaId: -1, linhaCodigo: -1, item: null };
+    }
 }
