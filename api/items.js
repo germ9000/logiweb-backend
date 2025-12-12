@@ -1,8 +1,35 @@
-// api/items.js
-
 import { connectSheet } from "./sheet.js";
 
 const SPREADSHEET_ID = process.env.SHEET_ID;
+
+// Função para verificar se item já existe
+async function verificarItemExistente(sheets, id, codigoBarras = '') {
+    try {
+        const result = await sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: "Items!A2:H", // Incluindo coluna H (código de barras)
+        });
+
+        const rows = result.data.values || [];
+        
+        // Verificar por ID
+        const porId = rows.findIndex(row => row[0] === id);
+        
+        // Verificar por código de barras (se fornecido)
+        const porCodigo = codigoBarras ? 
+            rows.findIndex(row => row[7] && row[7] === codigoBarras) : -1;
+        
+        return {
+            existe: porId !== -1 || porCodigo !== -1,
+            linhaId: porId,
+            linhaCodigo: porCodigo,
+            item: porId !== -1 ? rows[porId] : (porCodigo !== -1 ? rows[porCodigo] : null)
+        };
+    } catch (error) {
+        console.error("Erro ao verificar item:", error);
+        return { existe: false, linhaId: -1, linhaCodigo: -1, item: null };
+    }
+}
 
 // Função para registrar movimentação
 async function registrarMovimentacao(sheets, dados) {
@@ -111,108 +138,17 @@ export default async function handler(req, res) {
       }
     }
 
-    // ROTA DE ENTRADA (CÓDIGO EXISTENTE - ATUALIZADO)
+    // ROTA DE ENTRADA
     if (body.action === 'entrada') {
       try {
         // Verificar se item já existe
-        const readResult = await sheets.spreadsheets.values.get({
-          spreadsheetId: SPREADSHEET_ID,
-          range: "Items!A2:G",
-        });
-
-        const rows = readResult.data.values || [];
-        const rowIndex = rows.findIndex(r => r[0] === body.id);
-
-        if (rowIndex === -1) {
-          // Item novo - adicionar
-          const newItem = [
-            body.id,
-            body.nome,
-            body.categoria || 'Geral',
-            parseInt(body.quantidade) || 0,
-            body.local || 'Geral',
-            body.status || 'OK',
-            new Date().toISOString()
-          ];
-
-          await sheets.spreadsheets.values.append({
-            spreadsheetId: SPREADSHEET_ID,
-            range: "Items!A2",
-            valueInputOption: "RAW",
-            requestBody: {
-              values: [newItem],
-            },
-          });
-        } else {
-          // Item existe - atualizar quantidade
-          const currentQty = parseInt(rows[rowIndex][3]) || 0;
-          const newQty = currentQty + parseInt(body.quantidade);
-          
-          await sheets.spreadsheets.values.update({
-            spreadsheetId: SPREADSHEET_ID,
-            range: `Items!D${rowIndex + 2}`,
-            valueInputOption: "RAW",
-            requestBody: { values: [[newQty]] }
-          });
-        }
-
-        // Registrar movimentação de entrada
-        await registrarMovimentacao(sheets, {
-          tipo: 'entrada',
-          id: body.id,
-          nome: body.nome,
-          quantidade: body.quantidade,
-          motivo: 'Entrada manual',
-          usuario: body.usuario || 'Usuário'
-        });
-
-        return res.status(200).json({ ok: true, message: "Entrada registrada com sucesso!" });
-      } catch (error) {
-        return res.status(500).json({ error: error.message });
-      }
-    }
-
-    return res.status(400).json({ error: "Ação não especificada (use 'entrada' ou 'saida')" });
-  }
-
-  return res.status(405).json({ error: "Method not allowed" });
-}// Função para verificar se item já existe
-async function verificarItemExistente(sheets, id, codigoBarras = '') {
-    try {
-        const result = await sheets.spreadsheets.values.get({
-            spreadsheetId: SPREADSHEET_ID,
-            range: "Items!A2:H", // Incluindo coluna H (código de barras)
-        });
-
-        const rows = result.data.values || [];
-        
-        // Verificar por ID
-        const porId = rows.findIndex(row => row[0] === id);
-        
-        // Verificar por código de barras (se fornecido)
-        const porCodigo = codigoBarras ? 
-            rows.findIndex(row => row[7] && row[7] === codigoBarras) : -1;
-        
-        return {
-            existe: porId !== -1 || porCodigo !== -1,
-            linhaId: porId,
-            linhaCodigo: porCodigo,
-            item: porId !== -1 ? rows[porId] : (porCodigo !== -1 ? rows[porCodigo] : null)
-        };
-    } catch (error) {
-        console.error("Erro ao verificar item:", error);
-        return { existe: false, linhaId: -1, linhaCodigo: -1, item: null };
-    }
-}// ROTA DE ENTRADA
-if (body.action === 'entrada') {
-    try {
-        // Verificar se item já existe
         const verificado = await verificarItemExistente(sheets, body.id, body.codigoBarras);
+        let mensagem = "";
         
         if (verificado.existe) {
             // Item existe - atualizar quantidade
             const linha = verificado.linhaId !== -1 ? verificado.linhaId : verificado.linhaCodigo;
-            const currentQty = parseInt(rows[linha][3]) || 0;
+            const currentQty = parseInt(verificado.item[3]) || 0;
             const newQty = currentQty + parseInt(body.quantidade);
             
             await sheets.spreadsheets.values.update({
@@ -231,7 +167,7 @@ if (body.action === 'entrada') {
             });
             
             // Se tem código de barras novo e não tinha, atualizar
-            if (body.codigoBarras && !rows[linha][7]) {
+            if (body.codigoBarras && !verificado.item[7]) {
                 await sheets.spreadsheets.values.update({
                     spreadsheetId: SPREADSHEET_ID,
                     range: `Items!H${linha + 2}`,
@@ -282,7 +218,13 @@ if (body.action === 'entrada') {
             atualizado: verificado.existe
         });
 
-    } catch (error) {
+      } catch (error) {
         return res.status(500).json({ error: error.message });
+      }
     }
+
+    return res.status(400).json({ error: "Ação não especificada (use 'entrada' ou 'saida')" });
+  }
+
+  return res.status(405).json({ error: "Method not allowed" });
 }
