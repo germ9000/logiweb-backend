@@ -67,6 +67,148 @@ export async function renderEntradas() {
             quantidade: parseInt(document.getElementById('in-qty').value),
             local: 'Geral', // Default
             status: 'OK'    // Default
+            `
+<div>
+    <label class="block text-sm font-bold text-slate-700 mb-1">
+        Código de Barras
+        <span class="text-xs text-slate-400 font-normal">(Opcional)</span>
+    </label>
+    <div class="flex gap-2">
+        <input 
+            type="text" 
+            id="in-barcode" 
+            class="flex-1 border-slate-300 rounded-lg p-2.5 font-mono"
+            placeholder="Escaneie ou digite o código"
+        >
+        <button 
+            type="button" 
+            id="btn-scan" 
+            class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-lg font-bold flex items-center"
+        >
+            <i class="fa-solid fa-camera mr-2"></i> Escanear
+        </button>
+    </div>
+    <p class="text-xs text-slate-400 mt-1">
+        Use um leitor de código de barras ou clique no botão para usar a câmera
+    </p>
+</div>
+`    
+        
+const payload = {
+    action: 'entrada',
+    id: document.getElementById('in-id').value,
+    nome: document.getElementById('in-name').value,
+    categoria: document.getElementById('in-cat').value,
+    quantidade: parseInt(document.getElementById('in-qty').value),
+    local: 'Geral',
+    status: 'OK',
+    codigoBarras: document.getElementById('in-barcode').value || '',
+    usuario: JSON.parse(localStorage.getItem('logiUser') || '{}').nome || 'Sistema'
+};        
+      // Configurar botão de escanear
+document.getElementById('btn-scan')?.addEventListener('click', iniciarLeituraBarcode);
+
+function iniciarLeituraBarcode() {
+    if (typeof window.BarcodeDetector === 'undefined') {
+        showToast('Leitor de código de barras não suportado neste navegador', 'error');
+        return;
+    }
+    
+    showToast('Aponte a câmera para o código de barras', 'info');
+    
+    // Abrir câmera
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(stream => {
+            // Criar preview da câmera
+            const video = document.createElement('video');
+            video.style.position = 'fixed';
+            video.style.top = '0';
+            video.style.left = '0';
+            video.style.width = '100%';
+            video.style.height = '100%';
+            video.style.zIndex = '1000';
+            video.style.objectFit = 'cover';
+            video.srcObject = stream;
+            video.setAttribute('autoplay', '');
+            video.setAttribute('playsinline', '');
+            document.body.appendChild(video);
+            
+            // Criar overlay
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100%';
+            overlay.style.height = '100%';
+            overlay.style.zIndex = '1001';
+            overlay.style.background = 'rgba(0,0,0,0.7)';
+            overlay.style.display = 'flex';
+            overlay.style.flexDirection = 'column';
+            overlay.style.alignItems = 'center';
+            overlay.style.justifyContent = 'center';
+            
+            // Área de leitura
+            const scanArea = document.createElement('div');
+            scanArea.style.width = '300px';
+            scanArea.style.height = '150px';
+            scanArea.style.border = '3px solid #1a73e8';
+            scanArea.style.borderRadius = '8px';
+            scanArea.style.position = 'relative';
+            scanArea.style.overflow = 'hidden';
+            
+            overlay.appendChild(scanArea);
+            
+            // Botão de cancelar
+            const btnCancel = document.createElement('button');
+            btnCancel.textContent = 'Cancelar';
+            btnCancel.className = 'mt-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold';
+            btnCancel.onclick = () => {
+                stream.getTracks().forEach(track => track.stop());
+                video.remove();
+                overlay.remove();
+            };
+            overlay.appendChild(btnCancel);
+            
+            document.body.appendChild(overlay);
+            
+            // Detectar código de barras
+            const barcodeDetector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_39', 'code_128'] });
+            
+            const detectBarcode = () => {
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    barcodeDetector.detect(video)
+                        .then(barcodes => {
+                            if (barcodes.length > 0) {
+                                const barcode = barcodes[0].rawValue;
+                                document.getElementById('in-barcode').value = barcode;
+                                showToast(`Código lido: ${barcode}`, 'success');
+                                
+                                // Parar câmera e limpar
+                                stream.getTracks().forEach(track => track.stop());
+                                video.remove();
+                                overlay.remove();
+                            } else {
+                                requestAnimationFrame(detectBarcode);
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Erro na leitura:', err);
+                            requestAnimationFrame(detectBarcode);
+                        });
+                } else {
+                    requestAnimationFrame(detectBarcode);
+                }
+            };
+            
+            video.play().then(() => {
+                detectBarcode();
+            });
+        })
+        .catch(err => {
+            console.error('Erro ao acessar câmera:', err);
+            showToast('Não foi possível acessar a câmera', 'error');
+        });
+}  
         };
 
         try {
@@ -76,5 +218,8 @@ export async function renderEntradas() {
         } catch (error) {
             // Erro tratado no utils
         }
+
+        // Adicione este campo no HTML do formulário:
+
     });
 }
