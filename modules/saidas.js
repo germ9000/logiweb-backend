@@ -167,5 +167,363 @@ function setupEvents() {
         } catch (err) {
             // Erro já tratado no apiFetch
         }
+
+        `
+<!-- Opção de etiqueta -->
+<div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+    <div class="flex items-center gap-3 mb-3">
+        <input type="checkbox" id="gerar-etiqueta" class="w-5 h-5 text-brand-600 rounded">
+        <label for="gerar-etiqueta" class="font-bold text-slate-800">Gerar etiqueta para esta saída</label>
+    </div>
+    
+    <div id="opcoes-etiqueta" class="hidden space-y-3 mt-3">
+        <div>
+            <label class="block text-sm font-bold text-slate-700 mb-1">Tipo de etiqueta</label>
+            <select id="tipo-etiqueta" class="w-full border-slate-300 rounded-lg p-2.5 bg-white">
+                <option value="simples">Etiqueta Simples</option>
+                <option value="codigo-barras">Com Código de Barras</option>
+                <option value="completa">Etiqueta Completa</option>
+            </select>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-1">Quantidade de cópias</label>
+                <input type="number" id="copias-etiqueta" class="w-full border-slate-300 rounded-lg p-2.5" value="1" min="1" max="10">
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-1">Tamanho</label>
+                <select id="tamanho-etiqueta" class="w-full border-slate-300 rounded-lg p-2.5 bg-white">
+                    <option value="pequena">Pequena (50x30mm)</option>
+                    <option value="media" selected>Média (70x40mm)</option>
+                    <option value="grande">Grande (100x60mm)</option>
+                </select>
+            </div>
+        </div>
+        
+        <div>
+            <label class="block text-sm font-bold text-slate-700 mb-1">Observação na etiqueta (opcional)</label>
+            <input type="text" id="obs-etiqueta" class="w-full border-slate-300 rounded-lg p-2.5" placeholder="Ex: Para cliente X, projeto Y...">
+        </div>
+        
+        <div class="pt-2">
+            <button type="button" id="btn-preview-etiqueta" class="text-brand-600 font-bold text-sm hover:text-brand-800">
+                <i class="fa-solid fa-eye mr-1"></i> Visualizar etiqueta
+            </button>
+        </div>
+    </div>
+</div>
+`function gerarEtiqueta(item, quantidade, motivo, opcoes = {}) {
+    const {
+        tipo = 'simples',
+        copias = 1,
+        tamanho = 'media',
+        observacao = ''
+    } = opcoes;
+    
+    // Criar uma nova janela para a etiqueta
+    const janelaEtiqueta = window.open('', '_blank', 'width=600,height=800,scrollbars=yes');
+    
+    // Definir estilo baseado no tamanho
+    const tamanhos = {
+        pequena: { width: '50mm', height: '30mm', fontSize: '10px' },
+        media: { width: '70mm', height: '40mm', fontSize: '12px' },
+        grande: { width: '100mm', height: '60mm', fontSize: '14px' }
+    };
+    
+    const estilo = tamanhos[tamanho] || tamanhos.media;
+    
+    // Gerar conteúdo HTML da etiqueta
+    const data = new Date().toLocaleDateString('pt-BR');
+    const hora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const usuario = JSON.parse(localStorage.getItem('logiUser') || '{}').nome || 'Usuário';
+    
+    // Gerar código de barras fictício (em produção, use uma biblioteca como JsBarcode)
+    const codigoBarrasHTML = item.codigoBarras ? 
+        `<div class="barcode">${item.codigoBarras}</div>` : 
+        '<div class="barcode-placeholder">SEM CÓDIGO DE BARRAS</div>';
+    
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Etiqueta - ${item.id}</title>
+            <meta charset="UTF-8">
+            <style>
+                @media print {
+                    body { margin: 0; padding: 0; }
+                    .etiqueta-container { break-inside: avoid; }
+                }
+                
+                * {
+                    box-sizing: border-box;
+                    margin: 0;
+                    padding: 0;
+                }
+                
+                body {
+                    font-family: 'Arial', sans-serif;
+                    background: #f5f5f5;
+                    padding: 20px;
+                }
+                
+                .etiqueta-container {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 10px;
+                    justify-content: center;
+                }
+                
+                .etiqueta {
+                    background: white;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    overflow: hidden;
+                    position: relative;
+                }
+                
+                .header {
+                    background: #1a73e8;
+                    color: white;
+                    padding: 8px 12px;
+                    font-weight: bold;
+                    text-align: center;
+                    font-size: ${parseInt(estilo.fontSize) + 2}px;
+                }
+                
+                .content {
+                    padding: 12px;
+                }
+                
+                .linha {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 6px;
+                    font-size: ${estilo.fontSize};
+                }
+                
+                .label {
+                    font-weight: bold;
+                    color: #555;
+                    min-width: 100px;
+                }
+                
+                .value {
+                    color: #222;
+                    text-align: right;
+                    flex: 1;
+                }
+                
+                .barcode-section {
+                    text-align: center;
+                    margin: 10px 0;
+                    padding: 8px;
+                    background: #f8f9fa;
+                    border-radius: 4px;
+                    font-family: 'Courier New', monospace;
+                    font-size: ${parseInt(estilo.fontSize) + 4}px;
+                    font-weight: bold;
+                    letter-spacing: 2px;
+                }
+                
+                .barcode-placeholder {
+                    color: #999;
+                    font-size: ${estilo.fontSize};
+                }
+                
+                .footer {
+                    border-top: 1px dashed #ddd;
+                    padding-top: 8px;
+                    margin-top: 8px;
+                    font-size: ${parseInt(estilo.fontSize) - 2}px;
+                    color: #666;
+                    text-align: center;
+                }
+                
+                .observacao {
+                    background: #fff3cd;
+                    border: 1px solid #ffeaa7;
+                    border-radius: 4px;
+                    padding: 6px 8px;
+                    margin-top: 8px;
+                    font-size: ${parseInt(estilo.fontSize) - 1}px;
+                    color: #856404;
+                }
+                
+                /* Tamanhos específicos */
+                .tamanho-pequena { width: 50mm; height: 30mm; }
+                .tamanho-media { width: 70mm; height: 40mm; }
+                .tamanho-grande { width: 100mm; height: 60mm; }
+                
+                @media print {
+                    .no-print { display: none; }
+                    .etiqueta { break-inside: avoid; page-break-inside: avoid; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="no-print" style="margin-bottom: 20px; padding: 15px; background: white; border-radius: 8px;">
+                <h2 style="color: #1a73e8; margin-bottom: 10px;">Pré-visualização da Etiqueta</h2>
+                <p style="color: #666; margin-bottom: 15px;">
+                    Quantidade: ${copias} cópias | Tamanho: ${tamanho} | Tipo: ${tipo}
+                </p>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="window.print()" style="background: #1a73e8; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                        <i class="fa-solid fa-print"></i> Imprimir Etiquetas
+                    </button>
+                    <button onclick="window.close()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                        <i class="fa-solid fa-times"></i> Fechar
+                    </button>
+                </div>
+                <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+            </div>
+            
+            <div class="etiqueta-container">
+    `;
+    
+    // Gerar múltiplas cópias
+    for (let i = 0; i < copias; i++) {
+        html += `
+            <div class="etiqueta tamanho-${tamanho}" style="width: ${estilo.width}; height: ${estilo.height};">
+                <div class="header">SAÍDA DE ESTOQUE</div>
+                <div class="content">
+                    <div class="linha">
+                        <span class="label">ID:</span>
+                        <span class="value">${item.id}</span>
+                    </div>
+                    <div class="linha">
+                        <span class="label">Item:</span>
+                        <span class="value">${item.nome.substring(0, 30)}${item.nome.length > 30 ? '...' : ''}</span>
+                    </div>
+                    <div class="linha">
+                        <span class="label">Qtd Saída:</span>
+                        <span class="value" style="color: #e74c3c; font-weight: bold;">${quantidade} un</span>
+                    </div>
+                    <div class="linha">
+                        <span class="label">Estoque Restante:</span>
+                        <span class="value">${item.quantidade - quantidade} un</span>
+                    </div>
+                    <div class="linha">
+                        <span class="label">Motivo:</span>
+                        <span class="value">${motivo}</span>
+                    </div>
+                    <div class="linha">
+                        <span class="label">Data:</span>
+                        <span class="value">${data} ${hora}</span>
+                    </div>
+                    <div class="linha">
+                        <span class="label">Retirado por:</span>
+                        <span class="value">${usuario}</span>
+                    </div>
+                    
+                    ${tipo !== 'simples' ? `
+                    <div class="barcode-section">
+                        ${codigoBarrasHTML}
+                    </div>
+                    ` : ''}
+                    
+                    ${observacao ? `
+                    <div class="observacao">
+                        <strong>Obs:</strong> ${observacao}
+                    </div>
+                    ` : ''}
+                    
+                    <div class="footer">
+                        Gerado por LogiTrack • ${item.local || 'Local não informado'}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    html += `
+            </div>
+            
+            <script>
+                // Adicionar ícones do Font Awesome
+                const faLink = document.createElement('link');
+                faLink.rel = 'stylesheet';
+                faLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
+                document.head.appendChild(faLink);
+                
+                // Configurar impressão
+                function configurarImpressao() {
+                    window.onbeforeprint = function() {
+                        document.querySelector('.no-print').style.display = 'none';
+                    };
+                    
+                    window.onafterprint = function() {
+                        document.querySelector('.no-print').style.display = 'block';
+                    };
+                }
+                
+                // Configurar quando a janela carregar
+                window.onload = function() {
+                    configurarImpressao();
+                    // Auto-print se apenas uma cópia (opcional)
+                    // if (${copias} === 1 && ${tipo} === 'simples') {
+                    //     setTimeout(() => window.print(), 500);
+                    // }
+                };
+            </script>
+        </body>
+        </html>
+    `;
+    
+    // Escrever na janela
+    janelaEtiqueta.document.open();
+    janelaEtiqueta.document.write(html);
+    janelaEtiqueta.document.close();
+}
+
+// Configurar eventos da etiqueta
+function configurarEtiqueta() {
+    const checkbox = document.getElementById('gerar-etiqueta');
+    const opcoesDiv = document.getElementById('opcoes-etiqueta');
+    const btnPreview = document.getElementById('btn-preview-etiqueta');
+    
+    if (!checkbox || !opcoesDiv) return;
+    
+    // Mostrar/ocultar opções
+    checkbox.addEventListener('change', () => {
+        opcoesDiv.classList.toggle('hidden', !checkbox.checked);
+    });
+    
+    // Pré-visualizar
+    if (btnPreview) {
+        btnPreview.addEventListener('click', () => {
+            const itemId = document.getElementById('item-selecionado-id').value;
+            const item = todosItens.find(i => i.id === itemId);
+            
+            if (!item) {
+                showToast('Selecione um item primeiro', 'error');
+                return;
+            }
+            
+            const quantidade = parseInt(document.getElementById('quantidade').value) || 1;
+            const motivo = document.getElementById('motivo').value;
+            
+            const opcoesEtiqueta = {
+                tipo: document.getElementById('tipo-etiqueta').value,
+                copias: parseInt(document.getElementById('copias-etiqueta').value) || 1,
+                tamanho: document.getElementById('tamanho-etiqueta').value,
+                observacao: document.getElementById('obs-etiqueta').value || ''
+            };
+            
+            gerarEtiqueta(item, quantidade, motivo, opcoesEtiqueta);
+        });
+    }
+}// Gerar etiqueta se solicitado
+if (document.getElementById('gerar-etiqueta')?.checked) {
+    const opcoesEtiqueta = {
+        tipo: document.getElementById('tipo-etiqueta').value,
+        copias: parseInt(document.getElementById('copias-etiqueta').value) || 1,
+        tamanho: document.getElementById('tamanho-etiqueta').value,
+        observacao: document.getElementById('obs-etiqueta').value || ''
+    };
+    
+    gerarEtiqueta(item, quantidade, motivo, opcoesEtiqueta);
+}
     });
 }
