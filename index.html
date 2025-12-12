@@ -3,545 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LogiTrack Web</title>
-    
+    <title>LogiTrack Modular</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <script>
         tailwind.config = {
-            theme: {
-                extend: {
-                    colors: { brand: { 500: '#1a73e8', 600: '#1557b0' } }
-                }
-            }
+            theme: { extend: { colors: { brand: { 500: '#1a73e8', 600: '#1557b0', 50: '#eff6ff' } } } }
         }
     </script>
-    <style>
-        /* Classes utilitárias para esconder/mostrar */
-        .hidden-view { display: none !important; }
-        .active-nav { background-color: #eff6ff; color: #1a73e8; border-right: 3px solid #1a73e8; }
-        
-        /* Loading Overlay */
-        #global-loader { background: rgba(255,255,255,0.9); z-index: 9999; }
-    </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans h-screen flex flex-col overflow-hidden">
+<body class="bg-slate-50 text-slate-800 font-sans h-screen flex overflow-hidden">
 
-    <div id="login-screen" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center">
-        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
-            <div class="text-center mb-6">
-                <div class="bg-brand-500 text-white w-12 h-12 rounded-lg flex items-center justify-center mx-auto text-xl mb-3">
-                    <i class="fa-solid fa-box"></i>
-                </div>
-                <h1 class="text-2xl font-bold text-slate-900">LogiTrack</h1>
-                <p class="text-slate-500">Acesse sua conta para continuar</p>
-            </div>
-            <form onsubmit="event.preventDefault(); handleLogin();" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-bold mb-1">E-mail</label>
-                    <input type="email" id="login-email" class="w-full border p-2 rounded focus:ring-2 focus:ring-brand-500" required>
-                </div>
-                <div>
-                    <label class="block text-sm font-bold mb-1">Senha</label>
-                    <input type="password" id="login-pass" class="w-full border p-2 rounded focus:ring-2 focus:ring-brand-500" required>
-                </div>
-                <button type="submit" class="w-full bg-brand-500 text-white py-2 rounded font-bold hover:bg-brand-600 transition">
-                    Entrar
-                </button>
-            </form>
-            <p id="login-error" class="text-red-500 text-sm text-center mt-3 hidden"></p>
+    <aside class="w-64 bg-white border-r border-slate-200 flex flex-col z-20">
+        <div class="h-16 flex items-center px-6 border-b border-slate-100 gap-2">
+            <div class="bg-brand-600 text-white p-1 rounded"><i class="fa-solid fa-box"></i></div>
+            <span class="font-bold text-xl text-slate-800">LogiTrack</span>
         </div>
-    </div>
+        <nav class="mt-4 px-2 space-y-1">
+            <button id="nav-dashboard" class="w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex gap-3">
+                <i class="fa-solid fa-chart-pie w-5"></i> Dashboard
+            </button>
+            <button id="nav-estoque" class="w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex gap-3">
+                <i class="fa-solid fa-boxes-stacked w-5"></i> Estoque
+            </button>
+            <button id="nav-entradas" class="w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex gap-3">
+                <i class="fa-solid fa-arrow-down w-5"></i> Entradas
+            </button>
+            <button id="nav-saidas" class="w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex gap-3">
+                <i class="fa-solid fa-arrow-up w-5"></i> Saídas
+            </button>
+        </nav>
+    </aside>
 
-    <div id="app-layout" class="flex h-full hidden-view">
-        
-        <aside class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between shadow-sm z-20">
-            <div>
-                <div class="h-16 flex items-center px-6 border-b border-slate-100">
-                    <span class="font-bold text-xl text-brand-600 tracking-tight">LogiTrack ERP</span>
-                </div>
-                
-                <nav class="mt-4 px-2 space-y-1">
-                    <button onclick="navigateTo('dashboard')" id="nav-dashboard" class="w-full text-left px-4 py-3 rounded-r-lg text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3">
-                        <i class="fa-solid fa-chart-pie w-5"></i> Dashboard
-                    </button>
-                    <button onclick="navigateTo('estoque')" id="nav-estoque" class="w-full text-left px-4 py-3 rounded-r-lg text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3">
-                        <i class="fa-solid fa-boxes-stacked w-5"></i> Estoque
-                    </button>
-                    <button onclick="navigateTo('entrada')" id="nav-entrada" class="w-full text-left px-4 py-3 rounded-r-lg text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3">
-                        <i class="fa-solid fa-arrow-down w-5 text-green-600"></i> Entradas
-                    </button>
-                    <button onclick="navigateTo('saida')" id="nav-saida" class="w-full text-left px-4 py-3 rounded-r-lg text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3">
-                        <i class="fa-solid fa-arrow-up w-5 text-red-600"></i> Saídas
-                    </button>
-                    
-                    <div id="admin-menu" class="hidden-view pt-4 mt-4 border-t border-slate-100">
-                        <p class="px-4 text-xs font-bold text-slate-400 uppercase mb-2">Administração</p>
-                        <button onclick="navigateTo('usuarios')" id="nav-usuarios" class="w-full text-left px-4 py-3 rounded-r-lg text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3">
-                            <i class="fa-solid fa-users w-5"></i> Usuários
-                        </button>
-                    </div>
-                </nav>
-            </div>
-
-            <div class="p-4 border-t border-slate-100">
-                <button onclick="navigateTo('perfil')" id="nav-perfil" class="flex items-center gap-3 w-full hover:bg-slate-50 p-2 rounded transition">
-                    <div class="w-8 h-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold" id="avatar-initials">U</div>
-                    <div class="text-left flex-1">
-                        <p class="text-sm font-bold text-slate-800 truncate" id="sidebar-user-name">Usuário</p>
-                        <p class="text-xs text-slate-500">Ver Perfil</p>
-                    </div>
-                </button>
-                <button onclick="handleLogout()" class="mt-2 text-xs text-red-500 hover:text-red-700 w-full text-left pl-2">
-                    <i class="fa-solid fa-right-from-bracket"></i> Sair
-                </button>
-            </div>
-        </aside>
-
-        <main class="flex-1 bg-slate-50 overflow-auto relative p-6">
-            
-            <div id="global-loader" class="absolute inset-0 flex items-center justify-center hidden-view">
-                <i class="fa-solid fa-circle-notch fa-spin text-4xl text-brand-500"></i>
-            </div>
-
-            <section id="view-dashboard" class="view-section hidden-view h-full flex flex-col">
-                <h2 class="text-2xl font-bold mb-4 text-slate-800">Dashboard Gerencial</h2>
-                <div class="flex-1 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden relative">
-                    <iframe src="https://lookerstudio.google.com/reporting/d334dc55-06ee-4a39-9654-58c912dceb7c" 
-                            frameborder="0" style="border:0" allowfullscreen class="w-full h-full absolute inset-0"></iframe>
-                    <div class="absolute inset-0 -z-10 flex items-center justify-center">
-                        <p class="text-slate-400">Carregando Looker Studio...</p>
-                    </div>
-                </div>
-            </section>
-
-            <section id="view-estoque" class="view-section hidden-view">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-slate-800">Controle de Estoque</h2>
-                    <button onclick="loadItems()" class="text-brand-600 hover:text-brand-800"><i class="fa-solid fa-sync"></i> Atualizar</button>
-                </div>
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-slate-50 border-b">
-                            <tr>
-                                <th class="p-4">SKU/ID</th>
-                                <th class="p-4">Produto</th>
-                                <th class="p-4">Categoria</th>
-                                <th class="p-4 text-center">Qtd</th>
-                                <th class="p-4">Local</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-estoque-body">
-                            </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section id="view-entrada" class="view-section hidden-view max-w-2xl mx-auto">
-                <h2 class="text-2xl font-bold mb-6 text-slate-800">Registrar Entrada</h2>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <form onsubmit="event.preventDefault(); submitMovimento('entrada');">
-                        <div class="grid grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-sm font-bold mb-1">ID/SKU</label>
-                                <input type="text" id="in-id" class="w-full border p-2 rounded uppercase" required placeholder="Ex: PAR-001">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold mb-1">Quantidade</label>
-                                <input type="number" id="in-qtd" class="w-full border p-2 rounded" required min="1">
-                            </div>
-                        </div>
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold mb-1">Nome do Produto</label>
-                            <input type="text" id="in-nome" class="w-full border p-2 rounded" required>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4 mb-4">
-                             <div>
-                                <label class="block text-sm font-bold mb-1">Categoria</label>
-                                <select id="in-cat" class="w-full border p-2 rounded bg-white">
-                                    <option>Geral</option><option>Eletrônicos</option><option>Mecânica</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold mb-1">Local</label>
-                                <input type="text" id="in-local" class="w-full border p-2 rounded" placeholder="Corredor A">
-                            </div>
-                        </div>
-                        <button type="submit" class="w-full bg-green-600 text-white py-2 rounded font-bold hover:bg-green-700">Confirmar Entrada</button>
-                    </form>
-                </div>
-            </section>
-
-            <section id="view-saida" class="view-section hidden-view max-w-2xl mx-auto">
-                <h2 class="text-2xl font-bold mb-6 text-slate-800">Registrar Saída</h2>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <form onsubmit="event.preventDefault(); submitMovimento('saida');">
-                        <div class="bg-red-50 p-3 rounded mb-4 text-red-800 text-sm">
-                            <i class="fa-solid fa-triangle-exclamation"></i> A saída debitará do estoque atual.
-                        </div>
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold mb-1">Buscar Produto (ID)</label>
-                            <select id="out-select" class="w-full border p-2 rounded bg-white">
-                                <option value="">Carregando itens...</option>
-                            </select>
-                        </div>
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold mb-1">Quantidade a Retirar</label>
-                            <input type="number" id="out-qtd" class="w-full border p-2 rounded" required min="1">
-                        </div>
-                        <button type="submit" class="w-full bg-red-600 text-white py-2 rounded font-bold hover:bg-red-700">Confirmar Saída</button>
-                    </form>
-                </div>
-            </section>
-
-            <section id="view-usuarios" class="view-section hidden-view">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-slate-800">Gerenciar Usuários</h2>
-                    <button onclick="openUserModal()" class="bg-brand-600 text-white px-4 py-2 rounded font-bold hover:bg-brand-700">+ Novo Usuário</button>
-                </div>
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200">
-                    <table class="w-full text-left">
-                        <thead class="bg-slate-50 border-b">
-                            <tr>
-                                <th class="p-4">Nome</th>
-                                <th class="p-4">Email</th>
-                                <th class="p-4">Papel</th>
-                                <th class="p-4 text-right">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-users-body">
-                            </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section id="view-perfil" class="view-section hidden-view max-w-xl mx-auto">
-                <h2 class="text-2xl font-bold mb-6 text-slate-800">Meu Perfil</h2>
-                <div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200 text-center">
-                    <div class="w-24 h-24 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center text-4xl font-bold mx-auto mb-4" id="profile-avatar">U</div>
-                    
-                    <h3 class="text-xl font-bold text-slate-900" id="profile-name-display">--</h3>
-                    <p class="text-slate-500 mb-6" id="profile-email-display">--</p>
-                    
-                    <div class="text-left border-t pt-6">
-                        <label class="block text-sm font-bold mb-1">Nome Completo</label>
-                        <input type="text" id="edit-profile-name" class="w-full border p-2 rounded mb-4">
-                        
-                        <label class="block text-sm font-bold mb-1">Função (Role)</label>
-                        <input type="text" id="read-profile-role" class="w-full border p-2 rounded bg-slate-100 text-slate-500 mb-6" disabled>
-                        
-                        <button onclick="saveProfile()" class="w-full bg-slate-800 text-white py-2 rounded font-bold hover:bg-slate-900">Salvar Alterações</button>
-                    </div>
-                </div>
-            </section>
-
-        </main>
-    </div>
-
-    <div id="modal-user" class="hidden-view fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-        <div class="bg-white p-6 rounded-xl w-96">
-            <h3 class="text-lg font-bold mb-4">Dados do Usuário</h3>
-            <form onsubmit="event.preventDefault(); saveUser();">
-                <input type="text" id="modal-user-name" placeholder="Nome" class="w-full border p-2 mb-3 rounded" required>
-                <input type="email" id="modal-user-email" placeholder="Email" class="w-full border p-2 mb-3 rounded" required>
-                <input type="password" id="modal-user-pass" placeholder="Senha" class="w-full border p-2 mb-3 rounded">
-                <select id="modal-user-role" class="w-full border p-2 mb-4 rounded bg-white">
-                    <option value="comum">Comum</option>
-                    <option value="admin">Administrador</option>
-                </select>
-                <div class="flex justify-end gap-2">
-                    <button type="button" onclick="document.getElementById('modal-user').classList.add('hidden-view')" class="px-4 py-2 text-slate-500">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 bg-brand-600 text-white rounded font-bold">Salvar</button>
-                </div>
-            </form>
+    <main class="flex-1 bg-slate-50 overflow-auto relative p-6">
+        <div id="app-content"></div> <div id="global-loader" class="absolute inset-0 bg-white/80 z-50 hidden items-center justify-center">
+            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-brand-500"></i>
         </div>
-    </div>
+    </main>
 
-    <script>
-        // --- ESTADO GLOBAL ---
-        const App = {
-            user: null, // { nome, email, role, token }
-            items: [],
-            users: [],
-            currentView: 'dashboard'
-        };
+    <script type="module">
+        import { initApp, navigateTo } from './modules/router.js';
 
-        // --- INICIALIZAÇÃO ---
+        // Torna a navegação acessível
+        window.navigateTo = navigateTo;
+
         document.addEventListener('DOMContentLoaded', () => {
-            checkAuth();
+            // Liga os botões do menu
+            ['dashboard', 'estoque', 'entradas', 'saidas'].forEach(route => {
+                const btn = document.getElementById('nav-' + route);
+                if(btn) btn.addEventListener('click', () => navigateTo(route));
+            });
+
+            // Inicia o App
+            initApp();
         });
-
-        // --- 1. AUTENTICAÇÃO E CONTROLE DE ACESSO ---
-        function checkAuth() {
-            const storedUser = localStorage.getItem('logiUser');
-            if (storedUser) {
-                App.user = JSON.parse(storedUser);
-                showApp();
-            } else {
-                showLogin();
-            }
-        }
-
-        async function handleLogin() {
-            const email = document.getElementById('login-email').value;
-            const senha = document.getElementById('login-pass').value;
-            const errorMsg = document.getElementById('login-error');
-            
-            errorMsg.classList.add('hidden-view');
-
-            try {
-                // CHAMA SEU BACKEND EXISTENTE
-                const res = await fetch('/api/auth-login', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ email, senha })
-                });
-
-                const data = await res.json();
-
-                if (res.ok) {
-                    // Sucesso: Salva e entra
-                    const userData = { 
-                        nome: data.nome || 'Usuário', 
-                        email: email, 
-                        role: data.role || 'comum' // Admin ou Comum
-                    };
-                    localStorage.setItem('logiUser', JSON.stringify(userData));
-                    App.user = userData;
-                    showApp();
-                } else {
-                    throw new Error(data.error || "Credenciais inválidas");
-                }
-            } catch (err) {
-                errorMsg.innerText = err.message;
-                errorMsg.classList.remove('hidden-view');
-            }
-        }
-
-        function handleLogout() {
-            localStorage.removeItem('logiUser');
-            location.reload();
-        }
-
-        function showLogin() {
-            document.getElementById('login-screen').classList.remove('hidden-view');
-            document.getElementById('app-layout').classList.add('hidden-view');
-        }
-
-        function showApp() {
-            document.getElementById('login-screen').classList.add('hidden-view');
-            document.getElementById('app-layout').classList.remove('hidden-view');
-            
-            // Configura UI com dados do usuário
-            document.getElementById('sidebar-user-name').innerText = App.user.nome;
-            document.getElementById('avatar-initials').innerText = App.user.nome.charAt(0).toUpperCase();
-
-            // Controle de Permissão (Esconde menu Admin se não for admin)
-            if (App.user.role === 'admin') {
-                document.getElementById('admin-menu').classList.remove('hidden-view');
-            } else {
-                document.getElementById('admin-menu').classList.add('hidden-view');
-            }
-
-            navigateTo('dashboard'); // Tela inicial
-        }
-
-        // --- 2. NAVEGAÇÃO (ROTEAMENTO SPA) ---
-        function navigateTo(viewId) {
-            // Regra de segurança: Usuário comum não entra em tela de Admin
-            if (viewId === 'usuarios' && App.user.role !== 'admin') {
-                alert("Acesso negado.");
-                return;
-            }
-
-            // 1. Esconde todas as sections
-            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden-view'));
-            
-            // 2. Remove classe ativa dos menus
-            document.querySelectorAll('nav button').forEach(el => el.classList.remove('active-nav'));
-
-            // 3. Mostra a section desejada
-            document.getElementById(`view-${viewId}`).classList.remove('hidden-view');
-            
-            // 4. Ativa o menu correspondente
-            const navBtn = document.getElementById(`nav-${viewId}`);
-            if (navBtn) navBtn.classList.add('active-nav');
-
-            App.currentView = viewId;
-
-            // 5. Carrega dados específicos da tela
-            if (viewId === 'estoque' || viewId === 'saida') loadItems();
-            if (viewId === 'usuarios') loadUsers();
-            if (viewId === 'perfil') loadProfile();
-        }
-
-        // --- 3. LÓGICA DE DADOS (ITEMS) ---
-        async function loadItems() {
-            toggleLoader(true);
-            try {
-                const res = await fetch('/api/items'); // GET Items
-                const data = await res.json();
-                
-                // Mapper: Array do Sheets -> Objeto
-                App.items = data.map(row => ({
-                    id: row[0], name: row[1], cat: row[2], qty: parseInt(row[3]) || 0, local: row[4]
-                }));
-
-                // Renderiza Tabela Estoque
-                const tbody = document.getElementById('table-estoque-body');
-                tbody.innerHTML = App.items.map(i => `
-                    <tr class="border-b hover:bg-slate-50">
-                        <td class="p-4 font-mono font-bold text-xs">${i.id}</td>
-                        <td class="p-4">${i.name}</td>
-                        <td class="p-4 text-slate-500 text-sm">${i.cat}</td>
-                        <td class="p-4 text-center font-bold">${i.qty}</td>
-                        <td class="p-4 text-slate-500 text-sm">${i.local}</td>
-                    </tr>
-                `).join('');
-
-                // Renderiza Select de Saída
-                const select = document.getElementById('out-select');
-                select.innerHTML = '<option value="">Selecione...</option>' + 
-                    App.items.map(i => `<option value="${i.id}">${i.name} (Saldo: ${i.qty})</option>`).join('');
-
-            } catch (e) {
-                console.error(e);
-                alert("Erro ao carregar estoque.");
-            } finally {
-                toggleLoader(false);
-            }
-        }
-
-        async function submitMovimento(tipo) {
-            // Prepara Payload
-            let payload = {};
-            if (tipo === 'entrada') {
-                payload = {
-                    id: document.getElementById('in-id').value,
-                    nome: document.getElementById('in-nome').value,
-                    categoria: document.getElementById('in-cat').value,
-                    local: document.getElementById('in-local').value,
-                    quantidade: document.getElementById('in-qtd').value,
-                    action: 'entrada' // Importante para o backend saber
-                };
-            } else {
-                const id = document.getElementById('out-select').value;
-                if(!id) return alert("Selecione um item");
-                payload = {
-                    id: id,
-                    quantidade: document.getElementById('out-qtd').value,
-                    action: 'saida'
-                };
-            }
-
-            toggleLoader(true);
-            try {
-                const res = await fetch('/api/items', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(payload)
-                });
-                
-                if (res.ok) {
-                    alert(`${tipo === 'entrada' ? 'Entrada' : 'Saída'} registrada com sucesso!`);
-                    // Limpa forms
-                    document.querySelectorAll('form').forEach(f => f.reset());
-                    navigateTo('estoque'); // Volta para lista
-                } else {
-                    const err = await res.json();
-                    alert("Erro: " + (err.error || "Desconhecido"));
-                }
-            } catch (e) {
-                alert("Erro de conexão");
-            } finally {
-                toggleLoader(false);
-            }
-        }
-
-        // --- 4. LÓGICA DE USUÁRIOS (CRUD) ---
-        async function loadUsers() {
-            toggleLoader(true);
-            try {
-                const res = await fetch('/api/users');
-                const data = await res.json();
-                // Assumindo que api/users retorna [{rowIndex, nome, email, role}]
-                App.users = data;
-
-                const tbody = document.getElementById('table-users-body');
-                tbody.innerHTML = data.map(u => `
-                    <tr class="border-b">
-                        <td class="p-4 font-bold">${u.nome}</td>
-                        <td class="p-4 text-slate-500">${u.email}</td>
-                        <td class="p-4"><span class="bg-slate-100 px-2 py-1 rounded text-xs uppercase font-bold">${u.role}</span></td>
-                        <td class="p-4 text-right">
-                            <button onclick="alert('Função Excluir precisa ser implementada no backend')" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (e) { console.error(e); } finally { toggleLoader(false); }
-        }
-
-        function openUserModal() {
-            document.getElementById('modal-user').classList.remove('hidden-view');
-        }
-
-        async function saveUser() {
-            const nome = document.getElementById('modal-user-name').value;
-            const email = document.getElementById('modal-user-email').value;
-            const senha = document.getElementById('modal-user-pass').value; // Enviar apenas se for criar
-            const role = document.getElementById('modal-user-role').value;
-
-            try {
-                const res = await fetch('/api/users', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ nome, email, senha, role })
-                });
-                if(res.ok) {
-                    alert("Usuário salvo!");
-                    document.getElementById('modal-user').classList.add('hidden-view');
-                    loadUsers();
-                } else {
-                    alert("Erro ao salvar usuário");
-                }
-            } catch(e) { alert("Erro de rede"); }
-        }
-
-        // --- 5. PERFIL ---
-        function loadProfile() {
-            // Preenche os campos com o usuário logado (local)
-            // Idealmente buscaria dados frescos do servidor, mas para MVP usa o local
-            document.getElementById('profile-name-display').innerText = App.user.nome;
-            document.getElementById('profile-email-display').innerText = App.user.email;
-            document.getElementById('profile-avatar').innerText = App.user.nome.charAt(0).toUpperCase();
-            
-            document.getElementById('edit-profile-name').value = App.user.nome;
-            document.getElementById('read-profile-role').value = App.user.role.toUpperCase();
-        }
-
-        function saveProfile() {
-            const novoNome = document.getElementById('edit-profile-name').value;
-            if(!novoNome) return alert("Nome não pode ser vazio");
-
-            // Atualiza localmente (Para persistir, precisaria de um endpoint PUT /api/users/me)
-            App.user.nome = novoNome;
-            localStorage.setItem('logiUser', JSON.stringify(App.user));
-            
-            alert("Perfil atualizado (Localmente). Para salvar no banco, crie a rota de update.");
-            
-            // Atualiza UI
-            document.getElementById('sidebar-user-name').innerText = novoNome;
-            loadProfile();
-        }
-
-        // --- UTILS ---
-        function toggleLoader(show) {
-            const loader = document.getElementById('global-loader');
-            if(show) loader.classList.remove('hidden-view');
-            else loader.classList.add('hidden-view');
-        }
-
     </script>
 </body>
 </html>
