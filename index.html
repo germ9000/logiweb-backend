@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+    
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -80,5 +81,32 @@
 
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
+
+    <!-- Botão de notificações -->
+<div class="relative">
+  <button id="notifications-btn" class="relative p-2 text-slate-500 hover:text-slate-700">
+    <i class="fa-solid fa-bell text-xl"></i>
+    <span id="notification-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+  </button>
+  
+  <!-- Dropdown de notificações -->
+  <div id="notifications-dropdown" class="hidden absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-2xl border border-slate-200 z-50">
+    <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+      <h3 class="font-bold text-slate-800">Histórico de Movimentações</h3>
+      <button id="mark-all-read" class="text-xs text-brand-600 font-bold">Marcar todas como lidas</button>
+    </div>
+    <div id="notifications-list" class="max-h-96 overflow-y-auto">
+      <div class="p-4 text-center text-slate-400">
+        <i class="fa-solid fa-clock text-2xl mb-2"></i>
+        <p>Carregando histórico...</p>
+      </div>
+    </div>
+    <div class="p-3 border-t border-slate-100 text-center">
+      <button onclick="navigateTo('historico')" class="text-sm text-brand-600 font-bold">
+        Ver histórico completo
+      </button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
