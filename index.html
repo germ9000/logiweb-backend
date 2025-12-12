@@ -174,5 +174,72 @@
 </div>
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
+    <script>
+// Carregar informações do usuário
+function loadUserInfo() {
+    const user = JSON.parse(localStorage.getItem('logiUser') || '{}');
+    
+    if (!user.nome) {
+        // Se não estiver logado, redirecionar para login
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    // Preencher informações do usuário
+    const initials = user.nome ? user.nome.substring(0, 2).toUpperCase() : '??';
+    document.getElementById('user-avatar').textContent = initials;
+    document.getElementById('user-name').textContent = user.nome;
+    document.getElementById('dropdown-user-name').textContent = user.nome;
+    document.getElementById('dropdown-user-email').textContent = user.email || '';
+    document.getElementById('dropdown-user-role').textContent = user.role === 'admin' ? 'Administrador' : 'Usuário';
+    document.getElementById('dropdown-user-role').className = 
+        `inline-block mt-1 text-xs px-2 py-1 rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'}`;
+}
+
+// Configurar menu do usuário
+function setupUserMenu() {
+    const btn = document.getElementById('user-menu-btn');
+    const dropdown = document.getElementById('user-menu-dropdown');
+    
+    if (!btn || !dropdown) return;
+    
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('hidden');
+    });
+    
+    document.addEventListener('click', () => {
+        dropdown.classList.add('hidden');
+    });
+    
+    // Logout
+    document.getElementById('btn-logout').addEventListener('click', async () => {
+        const user = JSON.parse(localStorage.getItem('logiUser') || '{}');
+        
+        // Registrar logout
+        await fetch('/api/log-access', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: user.email,
+                nome: user.nome,
+                role: user.role,
+                action: 'logout'
+            })
+        });
+        
+        // Limpar localStorage e redirecionar
+        localStorage.removeItem('logiUser');
+        localStorage.removeItem('logiToken');
+        window.location.href = 'login.html';
+    });
+}
+
+// Inicializar quando a página carregar
+document.addEventListener('DOMContentLoaded', () => {
+    loadUserInfo();
+    setupUserMenu();
+});
+</script>
 </body>
 </html>
