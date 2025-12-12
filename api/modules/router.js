@@ -1,26 +1,34 @@
-import { state } from './utils.js';
 import { renderDashboard } from './dashboard.js';
 import { renderSaidas } from './saidas.js';
+// Importe outras se tiver (entradas, estoque)
 
 const routes = {
     'dashboard': renderDashboard,
     'saidas': renderSaidas,
-    'estoque': () => document.getElementById('app-content').innerHTML = '<h2 class="p-6">Estoque em construção...</h2>',
-    'entradas': () => document.getElementById('app-content').innerHTML = '<h2 class="p-6">Entradas em construção...</h2>',
+    'estoque': () => document.getElementById('app-content').innerHTML = '<h2 class="p-6">Estoque</h2>', 
+    'entradas': () => document.getElementById('app-content').innerHTML = '<h2 class="p-6">Entradas</h2>',
 };
 
 export function navigateTo(route) {
-    if (!state.user) return window.location.href = '/login.html'; // Simples proteção
+    // 1. Atualiza Visual do Menu (Remove ativo de todos, adiciona no atual)
+    document.querySelectorAll('aside nav button').forEach(btn => {
+        btn.classList.remove('bg-blue-50', 'text-brand-600', 'border-r-4', 'border-brand-600');
+        // Reseta para padrão
+        btn.classList.add('text-slate-600', 'hover:bg-slate-50');
+    });
+    
+    const activeBtn = document.getElementById('nav-' + route);
+    if (activeBtn) {
+        activeBtn.classList.remove('text-slate-600', 'hover:bg-slate-50');
+        activeBtn.classList.add('bg-blue-50', 'text-brand-600', 'border-r-4', 'border-brand-600');
+    }
 
-    // 1. Atualiza Menu
-    document.querySelectorAll('aside nav button').forEach(btn => 
-        btn.className = `w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex gap-3 ${btn.id === 'nav-'+route ? 'bg-blue-50 text-brand-600 border-r-4 border-brand-600' : ''}`
-    );
-
-    // 2. Renderiza Tela
-    const app = document.getElementById('app-content');
-    if (routes[route]) routes[route]();
-    else renderDashboard();
+    // 2. Executa a função do módulo
+    const renderFn = routes[route];
+    if (renderFn) renderFn();
 }
 
-export function initApp() { navigateTo('dashboard'); }
+// Inicializa
+export function initApp() {
+    navigateTo('dashboard');
+}
