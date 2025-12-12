@@ -23,3 +23,21 @@ async function registrarMovimentacao(sheets, dados) {
     console.error("Erro ao registrar movimentação:", error);
   }
 }
+// No trecho de saída, após atualizar a quantidade
+await registrarMovimentacao(sheets, {
+  tipo: 'saida',
+  id: body.id,
+  nome: rows[rowIndex][1], // Nome do item
+  quantidade: outputQty,
+  motivo: body.motivo || 'Venda',
+  usuario: 'Usuário atual' // Você pode pegar do localStorage
+});
+// No trecho de entrada
+await registrarMovimentacao(sheets, {
+  tipo: 'entrada',
+  id: body.id,
+  nome: body.nome,
+  quantidade: body.quantidade,
+  motivo: 'Entrada manual',
+  usuario: 'Usuário atual'
+});
