@@ -1,36 +1,84 @@
-<nav class="flex-1 mt-6 px-3 space-y-1 overflow-y-auto">
-    
-    <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-2">Visão Geral</p>
-    <button id="nav-dashboard" onclick="navigateTo('dashboard')" class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
-        <i class="fa-solid fa-chart-pie w-5 text-center"></i> Dashboard
-    </button>
-    <button id="nav-estoque" onclick="navigateTo('estoque')" class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
-        <i class="fa-solid fa-boxes-stacked w-5 text-center"></i> Estoque
-    </button>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogiTrack Web</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { brand: { 500: '#1a73e8', 600: '#1557b0', 50: '#eff6ff' } }, fontFamily: { sans: ['Inter', 'sans-serif'], display: ['Poppins', 'sans-serif'] } } }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans h-screen flex overflow-hidden">
 
-    <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-6">Operação</p>
-    <button id="nav-entradas" onclick="navigateTo('entradas')" class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
-        <i class="fa-solid fa-arrow-down w-5 text-center text-green-600"></i> Entradas
-    </button>
-    <button id="nav-saidas" onclick="navigateTo('saidas')" class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
-        <i class="fa-solid fa-arrow-up w-5 text-center text-red-600"></i> Saídas
-    </button>
+    <aside class="w-64 bg-white border-r border-slate-200 flex flex-col z-20 shadow-sm">
+        <div class="h-16 flex items-center px-6 border-b border-slate-100 gap-3">
+            <div class="bg-brand-600 text-white p-1.5 rounded-lg"><i class="fa-solid fa-box"></i></div>
+            <span class="font-display font-bold text-xl text-slate-800">LogiTrack</span>
+        </div>
+        <nav class="flex-1 mt-6 px-3 space-y-1">
+            <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-2">Visão Geral</p>
+            <button id="nav-dashboard" onclick="navigateTo('dashboard')" class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium rounded-lg flex gap-3 items-center"><i class="fa-solid fa-chart-pie"></i> Dashboard</button>
+            <button id="nav-estoque" onclick="navigateTo('estoque')" class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium rounded-lg flex gap-3 items-center"><i class="fa-solid fa-boxes-stacked"></i> Estoque</button>
+            <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-6">Operação</p>
+            <button id="nav-entradas" onclick="navigateTo('entradas')" class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium rounded-lg flex gap-3 items-center"><i class="fa-solid fa-arrow-down text-green-600"></i> Entradas</button>
+            <button id="nav-saidas" onclick="navigateTo('saidas')" class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium rounded-lg flex gap-3 items-center"><i class="fa-solid fa-arrow-up text-red-600"></i> Saídas</button>
+            <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-6">Sistema</p>
+            <button id="nav-perfil" onclick="navigateTo('perfil')" class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium rounded-lg flex gap-3 items-center"><i class="fa-solid fa-users-gear"></i> Perfis</button>
+        </nav>
+    </aside>
 
-    <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-6">Sistema</p>
-    <button id="nav-perfil" onclick="navigateTo('perfil')" class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
-        <i class="fa-solid fa-users-gear w-5 text-center"></i> Perfis
-    </button>
-</nav>
+    <main class="flex-1 bg-slate-50 overflow-auto relative p-8 flex flex-col">
+        <header class="flex justify-end mb-6 relative">
+            <button onclick="toggleNotif()" class="relative p-2 text-slate-400 hover:text-brand-600 transition">
+                <i class="fa-solid fa-bell text-xl"></i>
+                <span class="absolute top-1 right-1 h-2.5 w-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+            </button>
+            
+            <div id="notif-dropdown" class="hidden absolute top-10 right-0 w-80 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden">
+                <div class="px-4 py-3 border-b border-slate-50 font-bold text-sm text-slate-700">Histórico Recente</div>
+                <div id="notif-list" class="max-h-64 overflow-y-auto">
+                    <p class="p-4 text-center text-xs text-slate-400">Carregando...</p>
+                </div>
+            </div>
+        </header>
 
-<script type="module">
-    import { initApp, navigateTo } from './modules/router.js';
+        <div id="app-content" class="animate-fade-in flex-1"></div>
+        <div id="global-loader" class="absolute inset-0 bg-white/80 z-50 hidden flex-col items-center justify-center backdrop-blur-sm"><i class="fa-solid fa-circle-notch fa-spin text-4xl text-brand-500"></i></div>
+    </main>
 
-    // ISSO É CRUCIAL: Torna a função visível para o onclick="" do HTML
-    window.navigateTo = navigateTo;
+    <script type="module">
+        import { initApp, navigateTo } from './modules/router.js';
+        window.navigateTo = navigateTo;
+        
+        // Lógica do Sininho
+        window.toggleNotif = async () => {
+            const drop = document.getElementById('notif-dropdown');
+            drop.classList.toggle('hidden');
+            if(!drop.classList.contains('hidden')) {
+                const res = await fetch('/api/movements');
+                const moves = await res.json();
+                const list = document.getElementById('notif-list');
+                
+                if(moves.length === 0) list.innerHTML = '<p class="p-4 text-center text-xs text-slate-400">Sem movimentações.</p>';
+                else list.innerHTML = moves.map(m => `
+                    <div class="px-4 py-3 border-b border-slate-50 hover:bg-slate-50">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded ${m[0]==='ENTRADA'?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}">${m[0]}</span>
+                            <span class="text-[10px] text-slate-400">${m[3].split(' ')[1] || ''}</span>
+                        </div>
+                        <p class="text-xs text-slate-700"><span class="font-bold">${m[2]}x</span> Item ID: ${m[1]}</p>
+                    </div>
+                `).join('');
+            }
+        }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        initApp();
-    });
-</script>
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
 </body>
 </html>
