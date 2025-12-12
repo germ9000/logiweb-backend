@@ -1,4 +1,10 @@
-import { connectSheet } from "./sheet";
+import { connectSheet } from "./sheet.js";
+
+export const config = {
+  api: {
+    bodyParser: true,
+  },
+};
 
 const SPREADSHEET_ID = process.env.SHEET_ID;
 
@@ -12,12 +18,12 @@ export default async function handler(req, res) {
 
   const result = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
-    range: "Users!A2:C"
+    range: "Users!A2:C",
   });
 
   const users = result.data.values || [];
 
-  const user = users.find(u => u[0] === email && u[1] === senha);
+  const user = users.find((u) => u[0] === email && u[1] === senha);
 
   if (!user) {
     return res.status(401).json({ error: "Credenciais inválidas" });
@@ -25,6 +31,6 @@ export default async function handler(req, res) {
 
   return res.status(200).json({
     ok: true,
-    nome: user[2] || "Usuário"
+    nome: user[2] || "Usuário",
   });
 }
