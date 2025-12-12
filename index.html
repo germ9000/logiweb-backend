@@ -3,141 +3,347 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema LogiWeb</title>
+    <title>Inventário Pro</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
-        .card { border: 1px solid #ccc; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        input, select { padding: 8px; margin: 5px 0; width: 100%; box-sizing: border-box; }
-        button { background-color: #0070f3; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; }
-        button:hover { background-color: #0051a2; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .hidden { display: none; }
-        .error { color: red; }
+        /* Ajuste para esconder a barra de rolagem em modais mas manter funcionalidade */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased">
 
-    <h1>📦 LogiWeb System</h1>
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="bg-brand-600 text-white p-2 rounded-lg">
+                    <i class="fa-solid fa-box-open"></i>
+                </div>
+                <h1 class="text-xl font-bold text-slate-800 tracking-tight">Inventário<span class="text-brand-600">Pro</span></h1>
+            </div>
+            <button onclick="openModal()" class="bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-md shadow-brand-500/20 flex items-center gap-2">
+                <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Novo Item</span>
+            </button>
+        </div>
+    </header>
 
-    <div id="login-screen" class="card">
-        <h2>Login</h2>
-        <input type="email" id="email" placeholder="Seu e-mail">
-        <input type="password" id="senha" placeholder="Sua senha">
-        <button onclick="fazerLogin()">Entrar</button>
-        <p id="login-msg" class="error"></p>
-    </div>
-
-    <div id="dashboard" class="hidden">
-        <p>Bem-vindo, <strong id="user-name">Usuário</strong>! <button onclick="sair()" style="background:#555; padding:5px 10px;">Sair</button></p>
+    <main class="max-w-5xl mx-auto px-4 py-6">
         
-        <div class="card">
-            <h3>➕ Novo Item</h3>
-            <input type="text" id="novo-id" placeholder="ID (Ex: 001)">
-            <input type="text" id="novo-nome" placeholder="Nome do Produto">
-            <input type="text" id="novo-cat" placeholder="Categoria">
-            <input type="number" id="novo-qtd" placeholder="Quantidade">
-            <button onclick="adicionarItem()">Salvar na Planilha</button>
+        <div class="flex flex-col sm:flex-row gap-4 mb-6 justify-between items-center">
+            <div class="relative w-full sm:max-w-md">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fa-solid fa-search text-slate-400"></i>
+                </div>
+                <input type="text" id="searchInput" onkeyup="renderItems()" 
+                    class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 sm:text-sm transition-shadow shadow-sm" 
+                    placeholder="Buscar por nome ou código...">
+            </div>
+            <div class="text-sm text-slate-500 font-medium bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm">
+                Total de itens: <span id="totalItems" class="text-brand-600 font-bold">0</span>
+            </div>
         </div>
 
-        <div class="card">
-            <h3>📋 Inventário Atual</h3>
-            <button onclick="carregarItens()">🔄 Atualizar Lista</button>
-            <table id="tabela-itens">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nome</th>
-                        <th>Categ.</th>
-                        <th>Qtd</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+        <div id="inventoryGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            </div>
+
+        <div id="emptyState" class="hidden flex-col items-center justify-center py-12 text-center">
+            <div class="bg-slate-100 p-6 rounded-full mb-4">
+                <i class="fa-solid fa-clipboard-list text-4xl text-slate-300"></i>
+            </div>
+            <h3 class="text-lg font-medium text-slate-900">Nenhum item encontrado</h3>
+            <p class="text-slate-500 mt-1 max-w-xs mx-auto">Seu inventário está vazio ou a busca não retornou resultados.</p>
+            <button onclick="openModal()" class="mt-4 text-brand-600 font-medium hover:underline">Adicionar primeiro item</button>
+        </div>
+    </main>
+
+    <div id="itemModal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" onclick="closeModal()"></div>
+
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg w-full">
+                
+                <div class="bg-slate-50 px-4 py-3 border-b border-slate-100 flex justify-between items-center">
+                    <h3 class="text-lg font-semibold text-slate-900" id="modalTitle">Adicionar Item</h3>
+                    <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                        <i class="fa-solid fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <div class="px-6 py-6 space-y-4">
+                    <input type="hidden" id="itemId">
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Código / SKU</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="itemCode" class="block w-full rounded-lg border-slate-300 border px-3 py-2 focus:border-brand-500 focus:ring-brand-500 sm:text-sm" placeholder="Ex: 78910...">
+                            <button onclick="startScanner()" class="bg-slate-800 text-white px-3 py-2 rounded-lg hover:bg-slate-700 transition-colors" title="Escanear Código">
+                                <i class="fa-solid fa-barcode"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Nome do Produto</label>
+                        <input type="text" id="itemName" class="block w-full rounded-lg border-slate-300 border px-3 py-2 focus:border-brand-500 focus:ring-brand-500 sm:text-sm" placeholder="Ex: Teclado Mecânico">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Quantidade</label>
+                            <input type="number" id="itemQty" class="block w-full rounded-lg border-slate-300 border px-3 py-2 focus:border-brand-500 focus:ring-brand-500 sm:text-sm" placeholder="0">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Categoria</label>
+                            <select id="itemCategory" class="block w-full rounded-lg border-slate-300 border px-3 py-2 focus:border-brand-500 focus:ring-brand-500 sm:text-sm bg-white">
+                                <option value="Geral">Geral</option>
+                                <option value="Eletrônicos">Eletrônicos</option>
+                                <option value="Móveis">Móveis</option>
+                                <option value="Ferramentas">Ferramentas</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 px-6 py-4 flex flex-row-reverse gap-2">
+                    <button type="button" onclick="saveItem()" class="w-full sm:w-auto inline-flex justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-500 sm:ml-3">Salvar</button>
+                    <button type="button" onclick="closeModal()" class="mt-3 sm:mt-0 w-full sm:w-auto inline-flex justify-center rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="scannerModal" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black/90">
+        <div class="w-full max-w-md p-4 relative">
+            <button onclick="stopScanner()" class="absolute -top-10 right-0 text-white text-2xl z-50">
+                <i class="fa-solid fa-times"></i> Fechar
+            </button>
+            <div id="reader" class="bg-black rounded-lg overflow-hidden border-2 border-brand-500"></div>
+            <p class="text-center text-white mt-4 text-sm">Aponte a câmera para um código de barras ou QR Code</p>
         </div>
     </div>
 
     <script>
-        // FUNÇÃO DE LOGIN
-        async function fazerLogin() {
-            const email = document.getElementById('email').value;
-            const senha = document.getElementById('senha').value;
-            const msg = document.getElementById('login-msg');
+        // --- 1. GERENCIAMENTO DE ESTADO E STORAGE ---
+        let inventory = JSON.parse(localStorage.getItem('inventoryData')) || [];
+        let html5QrcodeScanner = null;
 
-            msg.innerText = "Carregando...";
+        // Inicializa a aplicação
+        document.addEventListener('DOMContentLoaded', () => {
+            renderItems();
+        });
 
-            try {
-                const res = await fetch('/api/auth-login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, senha })
+        // Salva no LocalStorage
+        function saveToStorage() {
+            localStorage.setItem('inventoryData', JSON.stringify(inventory));
+            renderItems();
+        }
+
+        // --- 2. RENDERIZAÇÃO (Visual) ---
+        function renderItems() {
+            const grid = document.getElementById('inventoryGrid');
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            const emptyState = document.getElementById('emptyState');
+            const totalLabel = document.getElementById('totalItems');
+
+            grid.innerHTML = '';
+
+            // Filtra itens
+            const filtered = inventory.filter(item => 
+                item.name.toLowerCase().includes(searchInput) || 
+                item.code.toLowerCase().includes(searchInput)
+            );
+
+            totalLabel.innerText = filtered.length;
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+            } else {
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
+                
+                filtered.forEach(item => {
+                    // Define cor do badge baseado na quantidade
+                    let qtyColor = item.qty > 5 ? 'bg-emerald-100 text-emerald-700' : (item.qty > 0 ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700');
+                    
+                    const card = document.createElement('div');
+                    card.className = "bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow p-5 flex flex-col justify-between";
+                    card.innerHTML = `
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 bg-slate-50 px-2 py-1 rounded border border-slate-100">
+                                    ${item.category}
+                                </span>
+                                <div class="flex gap-2">
+                                    <button onclick="editItem('${item.id}')" class="text-slate-400 hover:text-brand-600 transition-colors"><i class="fa-solid fa-pen-to-square"></i></button>
+                                    <button onclick="deleteItem('${item.id}')" class="text-slate-400 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </div>
+                            <h3 class="font-bold text-slate-800 text-lg mb-1 line-clamp-1">${item.name}</h3>
+                            <p class="text-sm text-slate-500 font-mono mb-4"><i class="fa-solid fa-barcode mr-1"></i> ${item.code || 'S/N'}</p>
+                        </div>
+                        <div class="flex items-center justify-between mt-2 pt-4 border-t border-slate-100">
+                            <span class="text-xs text-slate-400">Atualizado: ${new Date(item.updatedAt).toLocaleDateString()}</span>
+                            <span class="${qtyColor} px-3 py-1 rounded-full text-xs font-bold">Qtd: ${item.qty}</span>
+                        </div>
+                    `;
+                    grid.appendChild(card);
                 });
-
-                const data = await res.json();
-
-                if (res.ok) {
-                    document.getElementById('login-screen').classList.add('hidden');
-                    document.getElementById('dashboard').classList.remove('hidden');
-                    document.getElementById('user-name').innerText = data.nome;
-                    carregarItens(); // Já carrega a lista ao entrar
-                } else {
-                    msg.innerText = data.error || "Erro ao entrar";
-                }
-            } catch (error) {
-                msg.innerText = "Erro de conexão.";
             }
         }
 
-        // FUNÇÃO CARREGAR ITENS (GET)
-        async function carregarItens() {
-            const tbody = document.querySelector('#tabela-itens tbody');
-            tbody.innerHTML = '<tr><td colspan="4">Carregando...</td></tr>';
+        // --- 3. CRUD (Lógica de Negócio) ---
+        
+        function openModal(isEdit = false) {
+            document.getElementById('itemModal').classList.remove('hidden');
+            if (!isEdit) {
+                document.getElementById('modalTitle').innerText = 'Adicionar Item';
+                document.getElementById('itemId').value = '';
+                document.getElementById('itemCode').value = '';
+                document.getElementById('itemName').value = '';
+                document.getElementById('itemQty').value = '';
+                document.getElementById('itemCategory').value = 'Geral';
+            }
+        }
 
-            const res = await fetch('/api/items');
-            const lista = await res.json();
+        function closeModal() {
+            document.getElementById('itemModal').classList.add('hidden');
+        }
 
-            tbody.innerHTML = ''; // Limpa
+        function saveItem() {
+            const id = document.getElementById('itemId').value;
+            const code = document.getElementById('itemCode').value;
+            const name = document.getElementById('itemName').value;
+            const qty = document.getElementById('itemQty').value;
+            const category = document.getElementById('itemCategory').value;
+
+            if (!name) {
+                alert("Por favor, insira o nome do produto.");
+                return;
+            }
+
+            const timestamp = new Date().toISOString();
+
+            if (id) {
+                // Edição
+                const index = inventory.findIndex(i => i.id === id);
+                if (index !== -1) {
+                    inventory[index] = { ...inventory[index], code, name, qty, category, updatedAt: timestamp };
+                }
+            } else {
+                // Criação
+                const newItem = {
+                    id: Date.now().toString(),
+                    code,
+                    name,
+                    qty,
+                    category,
+                    updatedAt: timestamp
+                };
+                inventory.unshift(newItem); // Adiciona no topo
+            }
+
+            saveToStorage();
+            closeModal();
+        }
+
+        function editItem(id) {
+            const item = inventory.find(i => i.id === id);
+            if (item) {
+                document.getElementById('itemId').value = item.id;
+                document.getElementById('itemCode').value = item.code;
+                document.getElementById('itemName').value = item.name;
+                document.getElementById('itemQty').value = item.qty;
+                document.getElementById('itemCategory').value = item.category;
+                
+                document.getElementById('modalTitle').innerText = 'Editar Item';
+                openModal(true);
+            }
+        }
+
+        function deleteItem(id) {
+            if (confirm('Tem certeza que deseja excluir este item?')) {
+                inventory = inventory.filter(i => i.id !== id);
+                saveToStorage();
+            }
+        }
+
+        // --- 4. SCANNER (Câmera) ---
+        function startScanner() {
+            const scannerModal = document.getElementById('scannerModal');
+            scannerModal.classList.remove('hidden');
+
+            // Se já houver uma instância (erro de reabertura), limpamos
+            if (html5QrcodeScanner) { 
+                 // Instância anterior
+            } else {
+                html5QrcodeScanner = new Html5Qrcode("reader");
+            }
             
-            lista.forEach(item => {
-                // item é um array [id, nome, categoria, qtd, ...]
-                const row = `<tr>
-                    <td>${item[0]}</td>
-                    <td>${item[1]}</td>
-                    <td>${item[2]}</td>
-                    <td>${item[3]}</td>
-                </tr>`;
-                tbody.innerHTML += row;
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+            
+            html5QrcodeScanner.start(
+                { facingMode: "environment" }, // Câmera traseira
+                config,
+                onScanSuccess,
+                onScanFailure
+            ).catch(err => {
+                console.error("Erro ao iniciar câmera", err);
+                alert("Erro ao acessar câmera. Verifique as permissões.");
+                stopScanner();
             });
         }
 
-        // FUNÇÃO ADICIONAR ITEM (POST)
-        async function adicionarItem() {
-            const body = {
-                id: document.getElementById('novo-id').value,
-                nome: document.getElementById('novo-nome').value,
-                categoria: document.getElementById('novo-cat').value,
-                quantidade: document.getElementById('novo-qtd').value,
-                local: "Depósito A", // Padrão
-                status: "OK",
-                previsao: "N/A"
-            };
-
-            await fetch('/api/items', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
-
-            alert("Item salvo!");
-            carregarItens(); // Recarrega a lista
-            
-            // Limpar campos
-            document.getElementById('novo-nome').value = "";
+        function onScanSuccess(decodedText, decodedResult) {
+            // Toca um bip (opcional)
+            // Preenche o campo
+            document.getElementById('itemCode').value = decodedText;
+            stopScanner();
+            // Feedback visual
+            const input = document.getElementById('itemCode');
+            input.classList.add('ring-2', 'ring-green-500');
+            setTimeout(() => input.classList.remove('ring-2', 'ring-green-500'), 1000);
         }
 
-        function sair() {
-            location.reload();
+        function onScanFailure(error) {
+            // Console log para debug, mas não alerta o usuário constantemente
+            // console.warn(`Code scan error = ${error}`);
+        }
+
+        function stopScanner() {
+            const scannerModal = document.getElementById('scannerModal');
+            scannerModal.classList.add('hidden');
+            
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop().then((ignore) => {
+                    // Parado com sucesso
+                }).catch((err) => {
+                    // Falha ao parar
+                });
+            }
         }
     </script>
 </body>
