@@ -201,4 +201,86 @@ async function verificarItemExistente(sheets, id, codigoBarras = '') {
         console.error("Erro ao verificar item:", error);
         return { existe: false, linhaId: -1, linhaCodigo: -1, item: null };
     }
+}// ROTA DE ENTRADA
+if (body.action === 'entrada') {
+    try {
+        // Verificar se item já existe
+        const verificado = await verificarItemExistente(sheets, body.id, body.codigoBarras);
+        
+        if (verificado.existe) {
+            // Item existe - atualizar quantidade
+            const linha = verificado.linhaId !== -1 ? verificado.linhaId : verificado.linhaCodigo;
+            const currentQty = parseInt(rows[linha][3]) || 0;
+            const newQty = currentQty + parseInt(body.quantidade);
+            
+            await sheets.spreadsheets.values.update({
+                spreadsheetId: SPREADSHEET_ID,
+                range: `Items!D${linha + 2}`,
+                valueInputOption: "RAW",
+                requestBody: { values: [[newQty]] }
+            });
+            
+            // Atualizar data de atualização
+            await sheets.spreadsheets.values.update({
+                spreadsheetId: SPREADSHEET_ID,
+                range: `Items!G${linha + 2}`,
+                valueInputOption: "RAW",
+                requestBody: { values: [[new Date().toISOString()]] }
+            });
+            
+            // Se tem código de barras novo e não tinha, atualizar
+            if (body.codigoBarras && !rows[linha][7]) {
+                await sheets.spreadsheets.values.update({
+                    spreadsheetId: SPREADSHEET_ID,
+                    range: `Items!H${linha + 2}`,
+                    valueInputOption: "RAW",
+                    requestBody: { values: [[body.codigoBarras]] }
+                });
+            }
+            
+            mensagem = "Estoque atualizado com sucesso!";
+        } else {
+            // Item novo - adicionar
+            const newItem = [
+                body.id,
+                body.nome,
+                body.categoria || 'Geral',
+                parseInt(body.quantidade) || 0,
+                body.local || 'Geral',
+                body.status || 'OK',
+                new Date().toISOString(),
+                body.codigoBarras || ''
+            ];
+
+            await sheets.spreadsheets.values.append({
+                spreadsheetId: SPREADSHEET_ID,
+                range: "Items!A2",
+                valueInputOption: "RAW",
+                requestBody: {
+                    values: [newItem],
+                },
+            });
+            
+            mensagem = "Item criado com sucesso!";
+        }
+
+        // Registrar movimentação
+        await registrarMovimentacao(sheets, {
+            tipo: 'entrada',
+            id: body.id,
+            nome: body.nome,
+            quantidade: body.quantidade,
+            motivo: 'Entrada manual',
+            usuario: body.usuario || 'Usuário'
+        });
+
+        return res.status(200).json({ 
+            ok: true, 
+            message: mensagem,
+            atualizado: verificado.existe
+        });
+
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
 }
