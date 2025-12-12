@@ -524,6 +524,28 @@ if (document.getElementById('gerar-etiqueta')?.checked) {
     };
     
     gerarEtiqueta(item, quantidade, motivo, opcoesEtiqueta);
+}function configurarEventos() {
+    // ... código existente ...
+    
+    configurarEtiqueta(); // Adicione esta linha
+    
+    // ... resto do código ...
+}// Gerar etiqueta se solicitado
+if (document.getElementById('gerar-etiqueta')?.checked) {
+    const opcoesEtiqueta = {
+        tipo: document.getElementById('tipo-etiqueta').value,
+        copias: parseInt(document.getElementById('copias-etiqueta').value) || 1,
+        tamanho: document.getElementById('tamanho-etiqueta').value,
+        observacao: document.getElementById('obs-etiqueta').value || ''
+    };
+    
+    gerarEtiqueta(item, quantidade, motivo, opcoesEtiqueta);
+}function configurarEventos() {
+    // ... código existente ...
+    
+    configurarEtiqueta(); // Adicione esta linha
+    
+    // ... resto do código ...
 }
     });
 }
