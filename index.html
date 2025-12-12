@@ -142,7 +142,36 @@
                 }
             }
         }
-
+<!-- Botão de perfil do usuário -->
+<div class="relative ml-4">
+    <button id="user-menu-btn" class="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 transition">
+        <div id="user-avatar" class="w-8 h-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold">
+            <!-- Iniciais serão preenchidas por JS -->
+        </div>
+        <span id="user-name" class="text-sm font-bold text-slate-700 max-w-32 truncate"></span>
+        <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
+    </button>
+    
+    <!-- Dropdown do usuário -->
+    <div id="user-menu-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-slate-200 z-50">
+        <div class="p-4 border-b border-slate-100">
+            <p id="dropdown-user-name" class="font-bold text-slate-800"></p>
+            <p id="dropdown-user-email" class="text-xs text-slate-500 truncate"></p>
+            <span id="dropdown-user-role" class="inline-block mt-1 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600"></span>
+        </div>
+        <div class="p-2">
+            <button onclick="navigateTo('perfil')" class="w-full text-left px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm">
+                <i class="fa-solid fa-user-gear mr-2"></i> Meu Perfil
+            </button>
+            <button onclick="navigateTo('historico-acesso')" class="w-full text-left px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm">
+                <i class="fa-solid fa-clock-rotate-left mr-2"></i> Histórico
+            </button>
+            <button id="btn-logout" class="w-full text-left px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm mt-1">
+                <i class="fa-solid fa-right-from-bracket mr-2"></i> Sair
+            </button>
+        </div>
+    </div>
+</div>
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
