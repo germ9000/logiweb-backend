@@ -1,5 +1,11 @@
 import { connectSheet } from "./sheet.js";
 
+export const config = {
+  api: {
+    bodyParser: true,
+  },
+};
+
 const SPREADSHEET_ID = process.env.SHEET_ID;
 
 export default async function handler(req, res) {
@@ -9,7 +15,7 @@ export default async function handler(req, res) {
     if (req.method === "GET") {
       const result = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
-        range: "Items!A2:G"
+        range: "Items!A2:G",
       });
 
       const rows = result.data.values || [];
@@ -24,23 +30,24 @@ export default async function handler(req, res) {
         range: "Items!A2",
         valueInputOption: "RAW",
         requestBody: {
-          values: [[
-            body.id,
-            body.nome,
-            body.categoria,
-            body.quantidade,
-            body.local,
-            body.status,
-            body.previsao
-          ]]
-        }
+          values: [
+            [
+              body.id,
+              body.nome,
+              body.categoria,
+              body.quantidade,
+              body.local,
+              body.status,
+              body.previsao,
+            ],
+          ],
+        },
       });
 
       return res.status(201).json({ ok: true });
     }
 
     return res.status(405).json({ error: "Method not allowed" });
-
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
