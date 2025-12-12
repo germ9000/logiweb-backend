@@ -333,6 +333,27 @@ function configurarNovaCategoria() {
         } catch (error) {
             // Erro já tratado
         }
+// Verificar se item já existe (busca local)
+const itemExistente = todosItens.find(item => 
+    item.id === payload.id || 
+    (payload.codigoBarras && item.codigoBarras === payload.codigoBarras)
+);
+
+if (itemExistente) {
+    const confirmar = confirm(
+        `⚠️ ITEM JÁ CADASTRADO!\n\n` +
+        `ID: ${itemExistente.id}\n` +
+        `Nome: ${itemExistente.nome}\n` +
+        `Estoque atual: ${itemExistente.quantidade}\n\n` +
+        `Deseja adicionar ${payload.quantidade} unidades ao estoque existente?`
+    );
+    
+    if (!confirmar) {
+        showToast('Operação cancelada', 'info');
+        return;
+    }
+}
+        
     });
 }
     });
