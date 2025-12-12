@@ -2,6 +2,16 @@
 import { apiFetch, showToast } from './utils.js';
 
 export async function renderEntradas() {
+
+    export async function renderEntradas() {
+    // ... código existente ...
+    
+    // Depois de configurar os eventos, adicione:
+    await carregarCategorias();
+    configurarNovaCategoria();
+    
+    // ... resto do código ...
+}
     const container = document.getElementById('app-content');
     
     container.innerHTML = `
@@ -253,6 +263,77 @@ function iniciarLeituraBarcode() {
         </div>
     </div>
 </div>
-`
+`async function carregarCategorias() {
+    try {
+        const categorias = await apiFetch('/api/categories');
+        const select = document.getElementById('in-cat');
+        
+        if (categorias && categorias.length > 0) {
+            select.innerHTML = '<option value="">Selecione uma categoria</option>' +
+                categorias.map(cat => `<option value="${cat.nome}">${cat.nome}</option>`).join('');
+        } else {
+            select.innerHTML = '<option value="Geral">Geral</option>' +
+                '<option value="Eletrônicos">Eletrônicos</option>' +
+                '<option value="Ferramentas">Ferramentas</option>' +
+                '<option value="Mecânica">Mecânica</option>' +
+                '<option value="Construção">Construção</option>';
+        }
+    } catch (error) {
+        console.error('Erro ao carregar categorias:', error);
+        document.getElementById('in-cat').innerHTML = `
+            <option value="Geral">Geral</option>
+            <option value="Eletrônicos">Eletrônicos</option>
+            <option value="Ferramentas">Ferramentas</option>
+        `;
+    }
+}
+
+function configurarNovaCategoria() {
+    const btnNovaCat = document.getElementById('btn-nova-cat');
+    const modalCat = document.getElementById('modal-nova-categoria');
+    const btnCancelarCat = document.getElementById('btn-cancelar-cat');
+    const btnSalvarCat = document.getElementById('btn-salvar-cat');
+    
+    if (!btnNovaCat || !modalCat) return;
+    
+    btnNovaCat.addEventListener('click', () => {
+        modalCat.classList.remove('hidden');
+    });
+    
+    btnCancelarCat.addEventListener('click', () => {
+        modalCat.classList.add('hidden');
+        document.getElementById('nova-cat-nome').value = '';
+        document.getElementById('nova-cat-desc').value = '';
+    });
+    
+    btnSalvarCat.addEventListener('click', async () => {
+        const nome = document.getElementById('nova-cat-nome').value.trim();
+        const desc = document.getElementById('nova-cat-desc').value.trim();
+        
+        if (!nome) {
+            showToast('Digite o nome da categoria', 'error');
+            return;
+        }
+        
+        try {
+            await apiFetch('/api/categories', {
+                method: 'POST',
+                body: JSON.stringify({ nome, descricao: desc })
+            });
+            
+            showToast('Categoria criada com sucesso!', 'success');
+            modalCat.classList.add('hidden');
+            document.getElementById('nova-cat-nome').value = '';
+            document.getElementById('nova-cat-desc').value = '';
+            
+            // Recarregar categorias e selecionar a nova
+            await carregarCategorias();
+            document.getElementById('in-cat').value = nome;
+            
+        } catch (error) {
+            // Erro já tratado
+        }
+    });
+}
     });
 }
