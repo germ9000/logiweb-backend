@@ -4,6 +4,7 @@ import { renderEntradas } from './entradas.js';
 import { renderPerfil } from './perfil.js';
 import { renderEstoque } from './estoque.js';
 import { renderHistoricoAcesso } from './historico-acesso.js';
+import { renderCategorias } from './categorias.js'; // NOVO
 
 const routes = {
     'dashboard': renderDashboard,
@@ -11,13 +12,14 @@ const routes = {
     'entradas': renderEntradas,
     'perfil': renderPerfil,
     'estoque': renderEstoque,
-    'historico-acesso': renderHistoricoAcesso
+    'historico-acesso': renderHistoricoAcesso,
+    'categorias': renderCategorias // NOVO
 };
 
 export function navigateTo(route) {
     console.log("Navegando para:", route);
     
-    // Verificar se está logado (exceto para login)
+    // Verificar se está logado
     const user = JSON.parse(localStorage.getItem('logiUser') || '{}');
     if (!user.nome && route !== 'login') {
         window.location.href = 'login.html';
@@ -47,7 +49,6 @@ export function navigateTo(route) {
 }
 
 export function initApp() {
-    // Verificar login
     const user = JSON.parse(localStorage.getItem('logiUser') || '{}');
     if (!user.nome) {
         window.location.href = 'login.html';
@@ -55,5 +56,5 @@ export function initApp() {
     }
     
     navigateTo('dashboard');
-    loadUserInfo(); // Carregar informações do usuário no header
+    loadUserInfo();
 }
