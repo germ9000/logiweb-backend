@@ -1,5 +1,3 @@
-// api/log-access.js
-
 import { connectSheet } from "./sheet.js";
 
 const SPREADSHEET_ID = process.env.SHEET_ID;
