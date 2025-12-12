@@ -3,13 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LogiTrack ERP</title>
+    <title>LogiTrack Web</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-
+    
     <script>
         tailwind.config = {
             theme: {
@@ -20,415 +18,530 @@
         }
     </script>
     <style>
-        .glass-panel { background: white; border: 1px solid #E5E7EB; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        /* Ocultar elementos baseados em role */
-        body.role-comum .admin-only { display: none !important; }
+        /* Classes utilitárias para esconder/mostrar */
+        .hidden-view { display: none !important; }
+        .active-nav { background-color: #eff6ff; color: #1a73e8; border-right: 3px solid #1a73e8; }
+        
+        /* Loading Overlay */
+        #global-loader { background: rgba(255,255,255,0.9); z-index: 9999; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-800 font-sans h-screen flex flex-col overflow-hidden">
 
-    <nav class="bg-white border-b border-slate-200 sticky top-0 z-30 px-4 py-3 flex justify-between items-center shadow-sm">
-        <div class="flex items-center gap-3">
-            <div class="bg-brand-500 text-white p-2 rounded-lg"><i class="fa-solid fa-box-open"></i></div>
-            <span class="font-bold text-xl text-slate-900">LogiTrack ERP</span>
-        </div>
-        
-        <div class="flex items-center gap-4">
-            <div class="hidden md:flex space-x-1 bg-slate-100 p-1 rounded-lg">
-                <button onclick="nav('dashboard')" class="admin-only px-3 py-1.5 text-sm font-medium rounded-md hover:bg-white hover:shadow-sm transition">Dashboard</button>
-                <button onclick="nav('estoque')" class="px-3 py-1.5 text-sm font-medium rounded-md bg-white shadow-sm text-brand-600">Estoque</button>
-                <button onclick="nav('saida')" class="px-3 py-1.5 text-sm font-medium rounded-md hover:bg-white hover:shadow-sm transition">Saídas</button>
-                <button onclick="nav('entrada')" class="px-3 py-1.5 text-sm font-medium rounded-md hover:bg-white hover:shadow-sm transition">Entradas</button>
-                <button onclick="nav('importar')" class="px-3 py-1.5 text-sm font-medium rounded-md hover:bg-white hover:shadow-sm transition">Importar Excel</button>
-                <button onclick="nav('usuarios')" class="admin-only px-3 py-1.5 text-sm font-medium rounded-md hover:bg-white hover:shadow-sm transition">Usuários</button>
-            </div>
-            
-            <div class="flex items-center gap-3 border-l pl-4 ml-2">
-                <div class="text-right hidden sm:block">
-                    <p id="user-name" class="text-sm font-bold text-slate-900">Visitante</p>
-                    <p id="user-role" class="text-xs text-slate-500 uppercase">--</p>
+    <div id="login-screen" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
+            <div class="text-center mb-6">
+                <div class="bg-brand-500 text-white w-12 h-12 rounded-lg flex items-center justify-center mx-auto text-xl mb-3">
+                    <i class="fa-solid fa-box"></i>
                 </div>
-                <button onclick="logout()" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-right-from-bracket"></i></button>
+                <h1 class="text-2xl font-bold text-slate-900">LogiTrack</h1>
+                <p class="text-slate-500">Acesse sua conta para continuar</p>
             </div>
-        </div>
-    </nav>
-
-    <main class="flex-1 overflow-auto p-4 sm:p-6 relative">
-        
-        <section id="view-dashboard" class="hidden h-full flex flex-col">
-            <h2 class="text-2xl font-bold mb-4">Analytics Avançado</h2>
-            <div class="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden relative">
-                <iframe 
-                    src="https://lookerstudio.google.com/embed/reporting/SEU_ID_DO_LOOKER_AQUI/page/SEU_ID_DA_PAGINA" 
-                    frameborder="0" style="border:0" allowfullscreen class="w-full h-full absolute inset-0">
-                </iframe>
-                <div class="absolute inset-0 flex items-center justify-center bg-slate-50 -z-10">
-                    <p>Carregando Dashboard...</p>
+            <form onsubmit="event.preventDefault(); handleLogin();" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-bold mb-1">E-mail</label>
+                    <input type="email" id="login-email" class="w-full border p-2 rounded focus:ring-2 focus:ring-brand-500" required>
                 </div>
-            </div>
-        </section>
+                <div>
+                    <label class="block text-sm font-bold mb-1">Senha</label>
+                    <input type="password" id="login-pass" class="w-full border p-2 rounded focus:ring-2 focus:ring-brand-500" required>
+                </div>
+                <button type="submit" class="w-full bg-brand-500 text-white py-2 rounded font-bold hover:bg-brand-600 transition">
+                    Entrar
+                </button>
+            </form>
+            <p id="login-error" class="text-red-500 text-sm text-center mt-3 hidden"></p>
+        </div>
+    </div>
 
-        <section id="view-estoque" class="hidden">
-            <div class="flex justify-between mb-4">
-                <h2 class="text-2xl font-bold">Visão Geral do Estoque</h2>
-                <button onclick="fetchItems()" class="text-brand-600"><i class="fa-solid fa-sync"></i> Atualizar</button>
-            </div>
-            <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-slate-50 text-xs uppercase text-slate-500">
-                        <tr><th class="p-4">ID</th><th class="p-4">Produto</th><th class="p-4">Qtd</th><th class="p-4">Local</th></tr>
-                    </thead>
-                    <tbody id="estoque-body" class="divide-y divide-slate-100 text-sm"></tbody>
-                </table>
-            </div>
-        </section>
-
-        <section id="view-saida" class="hidden max-w-2xl mx-auto">
-            <h2 class="text-2xl font-bold mb-2">Registrar Saída</h2>
-            <p class="text-slate-500 mb-6">Baixa de estoque e registro de consumo.</p>
-            
-            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                <div class="mb-4">
-                    <label class="block text-sm font-bold mb-1">Buscar Item</label>
-                    <select id="saida-select" class="w-full border rounded p-2 bg-slate-50" onchange="checkStockInfo()">
-                        <option value="">Selecione um item...</option>
-                        </select>
+    <div id="app-layout" class="flex h-full hidden-view">
+        
+        <aside class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between shadow-sm z-20">
+            <div>
+                <div class="h-16 flex items-center px-6 border-b border-slate-100">
+                    <span class="font-bold text-xl text-brand-600 tracking-tight">LogiTrack ERP</span>
                 </div>
                 
-                <div id="stock-info" class="mb-4 p-3 bg-blue-50 text-blue-800 rounded hidden">
-                    Estoque Atual: <span id="current-stock" class="font-bold">0</span>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-bold mb-1">Quantidade de Saída</label>
-                        <input type="number" id="saida-qtd" class="w-full border rounded p-2" min="1">
+                <nav class="mt-4 px-2 space-y-1">
+                    <button onclick="navigateTo('dashboard')" id="nav-dashboard" class="w-full text-left px-4 py-3 rounded-r-lg text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3">
+                        <i class="fa-solid fa-chart-pie w-5"></i> Dashboard
+                    </button>
+                    <button onclick="navigateTo('estoque')" id="nav-estoque" class="w-full text-left px-4 py-3 rounded-r-lg text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3">
+                        <i class="fa-solid fa-boxes-stacked w-5"></i> Estoque
+                    </button>
+                    <button onclick="navigateTo('entrada')" id="nav-entrada" class="w-full text-left px-4 py-3 rounded-r-lg text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3">
+                        <i class="fa-solid fa-arrow-down w-5 text-green-600"></i> Entradas
+                    </button>
+                    <button onclick="navigateTo('saida')" id="nav-saida" class="w-full text-left px-4 py-3 rounded-r-lg text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3">
+                        <i class="fa-solid fa-arrow-up w-5 text-red-600"></i> Saídas
+                    </button>
+                    
+                    <div id="admin-menu" class="hidden-view pt-4 mt-4 border-t border-slate-100">
+                        <p class="px-4 text-xs font-bold text-slate-400 uppercase mb-2">Administração</p>
+                        <button onclick="navigateTo('usuarios')" id="nav-usuarios" class="w-full text-left px-4 py-3 rounded-r-lg text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3">
+                            <i class="fa-solid fa-users w-5"></i> Usuários
+                        </button>
                     </div>
-                    <div>
-                        <label class="block text-sm font-bold mb-1">Destino/Motivo</label>
-                        <input type="text" id="saida-motivo" class="w-full border rounded p-2" placeholder="Ex: Consumo Interno">
-                    </div>
-                </div>
+                </nav>
+            </div>
 
-                <button onclick="registrarSaida()" class="w-full bg-red-600 text-white py-2 rounded-lg font-bold hover:bg-red-700">
-                    Confirmar Saída
+            <div class="p-4 border-t border-slate-100">
+                <button onclick="navigateTo('perfil')" id="nav-perfil" class="flex items-center gap-3 w-full hover:bg-slate-50 p-2 rounded transition">
+                    <div class="w-8 h-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold" id="avatar-initials">U</div>
+                    <div class="text-left flex-1">
+                        <p class="text-sm font-bold text-slate-800 truncate" id="sidebar-user-name">Usuário</p>
+                        <p class="text-xs text-slate-500">Ver Perfil</p>
+                    </div>
+                </button>
+                <button onclick="handleLogout()" class="mt-2 text-xs text-red-500 hover:text-red-700 w-full text-left pl-2">
+                    <i class="fa-solid fa-right-from-bracket"></i> Sair
                 </button>
             </div>
-        </section>
+        </aside>
 
-        <section id="view-entrada" class="hidden max-w-2xl mx-auto">
-             <h2 class="text-2xl font-bold mb-6">Nova Entrada</h2>
-             <div class="bg-white p-6 rounded-xl border border-slate-200">
-                 <input type="text" id="in-id" placeholder="ID/SKU" class="w-full border p-2 mb-2 rounded">
-                 <input type="text" id="in-nome" placeholder="Nome" class="w-full border p-2 mb-2 rounded">
-                 <input type="number" id="in-qtd" placeholder="Qtd" class="w-full border p-2 mb-2 rounded">
-                 <button onclick="registrarEntrada()" class="w-full bg-brand-500 text-white py-2 rounded font-bold">Salvar Entrada</button>
-             </div>
-        </section>
-
-        <section id="view-importar" class="hidden">
-            <h2 class="text-2xl font-bold mb-4">Importação em Lote e Conferência</h2>
+        <main class="flex-1 bg-slate-50 overflow-auto relative p-6">
             
-            <div class="bg-white p-8 rounded-xl border-2 border-dashed border-slate-300 text-center mb-6" id="drop-area">
-                <i class="fa-solid fa-file-excel text-4xl text-green-600 mb-2"></i>
-                <p>Arraste sua planilha .xlsx ou clique para selecionar</p>
-                <input type="file" id="excel-file" accept=".xlsx, .xls" class="hidden" onchange="handleFile(this.files[0])">
-                <button onclick="document.getElementById('excel-file').click()" class="mt-4 px-4 py-2 bg-slate-100 rounded hover:bg-slate-200">Selecionar Arquivo</button>
+            <div id="global-loader" class="absolute inset-0 flex items-center justify-center hidden-view">
+                <i class="fa-solid fa-circle-notch fa-spin text-4xl text-brand-500"></i>
             </div>
 
-            <div id="conferencia-area" class="hidden">
-                <div class="flex justify-between items-center mb-2">
-                    <h3 class="font-bold">Itens Identificados: <span id="count-total">0</span></h3>
-                    <button onclick="processarImportacao()" class="bg-green-600 text-white px-4 py-2 rounded font-bold hover:bg-green-700">
-                        Confirmar Importação dos Itens Marcados
-                    </button>
+            <section id="view-dashboard" class="view-section hidden-view h-full flex flex-col">
+                <h2 class="text-2xl font-bold mb-4 text-slate-800">Dashboard Gerencial</h2>
+                <div class="flex-1 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden relative">
+                    <iframe src="https://lookerstudio.google.com/embed/reporting/SEU_ID_DO_REPORT/page/SEU_ID_DA_PAGE" 
+                            frameborder="0" style="border:0" allowfullscreen class="w-full h-full absolute inset-0"></iframe>
+                    <div class="absolute inset-0 -z-10 flex items-center justify-center">
+                        <p class="text-slate-400">Carregando Looker Studio...</p>
+                    </div>
                 </div>
-                <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow">
+            </section>
+
+            <section id="view-estoque" class="view-section hidden-view">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-800">Controle de Estoque</h2>
+                    <button onclick="loadItems()" class="text-brand-600 hover:text-brand-800"><i class="fa-solid fa-sync"></i> Atualizar</button>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                     <table class="w-full text-left text-sm">
-                        <thead class="bg-slate-100">
+                        <thead class="bg-slate-50 border-b">
                             <tr>
-                                <th class="p-3 w-10"><input type="checkbox" onchange="toggleAll(this)"></th>
-                                <th class="p-3">Status</th>
-                                <th class="p-3">ID</th>
-                                <th class="p-3">Produto</th>
-                                <th class="p-3">Qtd Prevista</th>
+                                <th class="p-4">SKU/ID</th>
+                                <th class="p-4">Produto</th>
+                                <th class="p-4">Categoria</th>
+                                <th class="p-4 text-center">Qtd</th>
+                                <th class="p-4">Local</th>
                             </tr>
                         </thead>
-                        <tbody id="excel-list"></tbody>
+                        <tbody id="table-estoque-body">
+                            </tbody>
                     </table>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <section id="view-usuarios" class="hidden max-w-4xl mx-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold">Gerenciar Usuários</h2>
-                <button onclick="document.getElementById('modal-user').classList.remove('hidden')" class="bg-brand-500 text-white px-4 py-2 rounded-lg text-sm font-bold">+ Novo Usuário</button>
-            </div>
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
-                <table class="w-full text-left">
-                    <thead class="bg-slate-50 border-b">
-                        <tr><th class="p-4">Nome</th><th class="p-4">Email</th><th class="p-4">Papel</th></tr>
-                    </thead>
-                    <tbody id="users-body"></tbody>
-                </table>
-            </div>
-        </section>
+            <section id="view-entrada" class="view-section hidden-view max-w-2xl mx-auto">
+                <h2 class="text-2xl font-bold mb-6 text-slate-800">Registrar Entrada</h2>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <form onsubmit="event.preventDefault(); submitMovimento('entrada');">
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-bold mb-1">ID/SKU</label>
+                                <input type="text" id="in-id" class="w-full border p-2 rounded uppercase" required placeholder="Ex: PAR-001">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold mb-1">Quantidade</label>
+                                <input type="number" id="in-qtd" class="w-full border p-2 rounded" required min="1">
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-bold mb-1">Nome do Produto</label>
+                            <input type="text" id="in-nome" class="w-full border p-2 rounded" required>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                             <div>
+                                <label class="block text-sm font-bold mb-1">Categoria</label>
+                                <select id="in-cat" class="w-full border p-2 rounded bg-white">
+                                    <option>Geral</option><option>Eletrônicos</option><option>Mecânica</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold mb-1">Local</label>
+                                <input type="text" id="in-local" class="w-full border p-2 rounded" placeholder="Corredor A">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-green-600 text-white py-2 rounded font-bold hover:bg-green-700">Confirmar Entrada</button>
+                    </form>
+                </div>
+            </section>
 
-    </main>
+            <section id="view-saida" class="view-section hidden-view max-w-2xl mx-auto">
+                <h2 class="text-2xl font-bold mb-6 text-slate-800">Registrar Saída</h2>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <form onsubmit="event.preventDefault(); submitMovimento('saida');">
+                        <div class="bg-red-50 p-3 rounded mb-4 text-red-800 text-sm">
+                            <i class="fa-solid fa-triangle-exclamation"></i> A saída debitará do estoque atual.
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-bold mb-1">Buscar Produto (ID)</label>
+                            <select id="out-select" class="w-full border p-2 rounded bg-white">
+                                <option value="">Carregando itens...</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-bold mb-1">Quantidade a Retirar</label>
+                            <input type="number" id="out-qtd" class="w-full border p-2 rounded" required min="1">
+                        </div>
+                        <button type="submit" class="w-full bg-red-600 text-white py-2 rounded font-bold hover:bg-red-700">Confirmar Saída</button>
+                    </form>
+                </div>
+            </section>
 
-    <div id="modal-user" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-white p-6 rounded-xl w-96 shadow-2xl">
-            <h3 class="text-lg font-bold mb-4">Novo Usuário</h3>
-            <input type="text" id="new-user-name" placeholder="Nome" class="w-full border p-2 mb-3 rounded">
-            <input type="email" id="new-user-email" placeholder="Email" class="w-full border p-2 mb-3 rounded">
-            <input type="password" id="new-user-pass" placeholder="Senha" class="w-full border p-2 mb-3 rounded">
-            <select id="new-user-role" class="w-full border p-2 mb-4 rounded bg-white">
-                <option value="comum">Comum</option>
-                <option value="admin">Administrador</option>
-            </select>
-            <div class="flex justify-end gap-2">
-                <button onclick="document.getElementById('modal-user').classList.add('hidden')" class="px-4 py-2 text-slate-500">Cancelar</button>
-                <button onclick="criarUsuario()" class="px-4 py-2 bg-brand-500 text-white rounded">Salvar</button>
-            </div>
+            <section id="view-usuarios" class="view-section hidden-view">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-800">Gerenciar Usuários</h2>
+                    <button onclick="openUserModal()" class="bg-brand-600 text-white px-4 py-2 rounded font-bold hover:bg-brand-700">+ Novo Usuário</button>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 border-b">
+                            <tr>
+                                <th class="p-4">Nome</th>
+                                <th class="p-4">Email</th>
+                                <th class="p-4">Papel</th>
+                                <th class="p-4 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-users-body">
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="view-perfil" class="view-section hidden-view max-w-xl mx-auto">
+                <h2 class="text-2xl font-bold mb-6 text-slate-800">Meu Perfil</h2>
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200 text-center">
+                    <div class="w-24 h-24 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center text-4xl font-bold mx-auto mb-4" id="profile-avatar">U</div>
+                    
+                    <h3 class="text-xl font-bold text-slate-900" id="profile-name-display">--</h3>
+                    <p class="text-slate-500 mb-6" id="profile-email-display">--</p>
+                    
+                    <div class="text-left border-t pt-6">
+                        <label class="block text-sm font-bold mb-1">Nome Completo</label>
+                        <input type="text" id="edit-profile-name" class="w-full border p-2 rounded mb-4">
+                        
+                        <label class="block text-sm font-bold mb-1">Função (Role)</label>
+                        <input type="text" id="read-profile-role" class="w-full border p-2 rounded bg-slate-100 text-slate-500 mb-6" disabled>
+                        
+                        <button onclick="saveProfile()" class="w-full bg-slate-800 text-white py-2 rounded font-bold hover:bg-slate-900">Salvar Alterações</button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <div id="modal-user" class="hidden-view fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+        <div class="bg-white p-6 rounded-xl w-96">
+            <h3 class="text-lg font-bold mb-4">Dados do Usuário</h3>
+            <form onsubmit="event.preventDefault(); saveUser();">
+                <input type="text" id="modal-user-name" placeholder="Nome" class="w-full border p-2 mb-3 rounded" required>
+                <input type="email" id="modal-user-email" placeholder="Email" class="w-full border p-2 mb-3 rounded" required>
+                <input type="password" id="modal-user-pass" placeholder="Senha" class="w-full border p-2 mb-3 rounded">
+                <select id="modal-user-role" class="w-full border p-2 mb-4 rounded bg-white">
+                    <option value="comum">Comum</option>
+                    <option value="admin">Administrador</option>
+                </select>
+                <div class="flex justify-end gap-2">
+                    <button type="button" onclick="document.getElementById('modal-user').classList.add('hidden-view')" class="px-4 py-2 text-slate-500">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-brand-600 text-white rounded font-bold">Salvar</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <script>
-        // --- 1. GERENCIAMENTO DE ESTADO E NAVEGAÇÃO ---
-        const STATE = {
-            user: JSON.parse(localStorage.getItem('logiUser')) || null, // { nome, role, email }
+        // --- ESTADO GLOBAL ---
+        const App = {
+            user: null, // { nome, email, role, token }
             items: [],
-            importedItems: []
+            users: [],
+            currentView: 'dashboard'
         };
 
-        // Inicialização
+        // --- INICIALIZAÇÃO ---
         document.addEventListener('DOMContentLoaded', () => {
-            if(!STATE.user) {
-                // Se não logado, mandar pro login (aqui vou simular que já logou para demo)
-                // window.location.href = 'login.html';
-                // Para teste imediato, vamos criar um user fake se não existir
-                STATE.user = { nome: "Admin Demo", role: "admin" }; 
-            }
-            updateUIProfile();
-            nav('estoque');
+            checkAuth();
         });
 
-        function updateUIProfile() {
-            document.getElementById('user-name').innerText = STATE.user.nome;
-            document.getElementById('user-role').innerText = STATE.user.role;
-            document.body.className = `role-${STATE.user.role}`; // Ajuda o CSS a esconder coisas
+        // --- 1. AUTENTICAÇÃO E CONTROLE DE ACESSO ---
+        function checkAuth() {
+            const storedUser = localStorage.getItem('logiUser');
+            if (storedUser) {
+                App.user = JSON.parse(storedUser);
+                showApp();
+            } else {
+                showLogin();
+            }
         }
 
-        function nav(viewId) {
-            // Esconde todas as seções
-            document.querySelectorAll('main > section').forEach(el => el.classList.add('hidden'));
+        async function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const senha = document.getElementById('login-pass').value;
+            const errorMsg = document.getElementById('login-error');
             
-            // Segurança simples de front: Se for admin-only e user for comum, bloqueia
-            if (['dashboard', 'usuarios'].includes(viewId) && STATE.user.role !== 'admin') {
-                alert("Acesso restrito a administradores.");
+            errorMsg.classList.add('hidden-view');
+
+            try {
+                // CHAMA SEU BACKEND EXISTENTE
+                const res = await fetch('/api/auth-login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email, senha })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    // Sucesso: Salva e entra
+                    const userData = { 
+                        nome: data.nome || 'Usuário', 
+                        email: email, 
+                        role: data.role || 'comum' // Admin ou Comum
+                    };
+                    localStorage.setItem('logiUser', JSON.stringify(userData));
+                    App.user = userData;
+                    showApp();
+                } else {
+                    throw new Error(data.error || "Credenciais inválidas");
+                }
+            } catch (err) {
+                errorMsg.innerText = err.message;
+                errorMsg.classList.remove('hidden-view');
+            }
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('logiUser');
+            location.reload();
+        }
+
+        function showLogin() {
+            document.getElementById('login-screen').classList.remove('hidden-view');
+            document.getElementById('app-layout').classList.add('hidden-view');
+        }
+
+        function showApp() {
+            document.getElementById('login-screen').classList.add('hidden-view');
+            document.getElementById('app-layout').classList.remove('hidden-view');
+            
+            // Configura UI com dados do usuário
+            document.getElementById('sidebar-user-name').innerText = App.user.nome;
+            document.getElementById('avatar-initials').innerText = App.user.nome.charAt(0).toUpperCase();
+
+            // Controle de Permissão (Esconde menu Admin se não for admin)
+            if (App.user.role === 'admin') {
+                document.getElementById('admin-menu').classList.remove('hidden-view');
+            } else {
+                document.getElementById('admin-menu').classList.add('hidden-view');
+            }
+
+            navigateTo('dashboard'); // Tela inicial
+        }
+
+        // --- 2. NAVEGAÇÃO (ROTEAMENTO SPA) ---
+        function navigateTo(viewId) {
+            // Regra de segurança: Usuário comum não entra em tela de Admin
+            if (viewId === 'usuarios' && App.user.role !== 'admin') {
+                alert("Acesso negado.");
                 return;
             }
 
-            // Mostra a desejada
-            document.getElementById(`view-${viewId}`).classList.remove('hidden');
+            // 1. Esconde todas as sections
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden-view'));
+            
+            // 2. Remove classe ativa dos menus
+            document.querySelectorAll('nav button').forEach(el => el.classList.remove('active-nav'));
 
-            // Carrega dados específicos se necessário
-            if(viewId === 'estoque' || viewId === 'saida') fetchItems();
-            if(viewId === 'usuarios') fetchUsers();
+            // 3. Mostra a section desejada
+            document.getElementById(`view-${viewId}`).classList.remove('hidden-view');
+            
+            // 4. Ativa o menu correspondente
+            const navBtn = document.getElementById(`nav-${viewId}`);
+            if (navBtn) navBtn.classList.add('active-nav');
+
+            App.currentView = viewId;
+
+            // 5. Carrega dados específicos da tela
+            if (viewId === 'estoque' || viewId === 'saida') loadItems();
+            if (viewId === 'usuarios') loadUsers();
+            if (viewId === 'perfil') loadProfile();
         }
 
-        function logout() {
-            localStorage.removeItem('logiUser');
-            window.location.reload();
-        }
-
-        // --- 2. API INTEGRATION (Itens) ---
-        async function fetchItems() {
-            // Simulação de Fetch (Substitua pela URL real /api/items)
+        // --- 3. LÓGICA DE DADOS (ITEMS) ---
+        async function loadItems() {
+            toggleLoader(true);
             try {
-                const res = await fetch('/api/items');
+                const res = await fetch('/api/items'); // GET Items
                 const data = await res.json();
                 
-                // Mapear dados da planilha (Array) para Objetos
-                // Ajuste os índices conforme sua planilha: [id, nome, cat, qtd, local...]
-                STATE.items = data.map(r => ({ id: r[0], name: r[1], qty: parseInt(r[3]), local: r[4] }));
-                
-                renderEstoque();
-                populateSelectSaida();
-            } catch (e) { console.error("Erro fetch", e); }
-        }
+                // Mapper: Array do Sheets -> Objeto
+                App.items = data.map(row => ({
+                    id: row[0], name: row[1], cat: row[2], qty: parseInt(row[3]) || 0, local: row[4]
+                }));
 
-        function renderEstoque() {
-            const tbody = document.getElementById('estoque-body');
-            tbody.innerHTML = STATE.items.map(i => `
-                <tr class="hover:bg-slate-50">
-                    <td class="p-4 font-mono text-xs font-bold">${i.id}</td>
-                    <td class="p-4 font-bold">${i.name}</td>
-                    <td class="p-4"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-bold">${i.qty}</span></td>
-                    <td class="p-4 text-slate-500">${i.local || '-'}</td>
-                </tr>
-            `).join('');
-        }
+                // Renderiza Tabela Estoque
+                const tbody = document.getElementById('table-estoque-body');
+                tbody.innerHTML = App.items.map(i => `
+                    <tr class="border-b hover:bg-slate-50">
+                        <td class="p-4 font-mono font-bold text-xs">${i.id}</td>
+                        <td class="p-4">${i.name}</td>
+                        <td class="p-4 text-slate-500 text-sm">${i.cat}</td>
+                        <td class="p-4 text-center font-bold">${i.qty}</td>
+                        <td class="p-4 text-slate-500 text-sm">${i.local}</td>
+                    </tr>
+                `).join('');
 
-        // --- 3. LÓGICA DE SAÍDA ---
-        function populateSelectSaida() {
-            const select = document.getElementById('saida-select');
-            select.innerHTML = '<option value="">Selecione um item...</option>' + 
-                STATE.items.map(i => `<option value="${i.id}">${i.name} (Saldo: ${i.qty})</option>`).join('');
-        }
+                // Renderiza Select de Saída
+                const select = document.getElementById('out-select');
+                select.innerHTML = '<option value="">Selecione...</option>' + 
+                    App.items.map(i => `<option value="${i.id}">${i.name} (Saldo: ${i.qty})</option>`).join('');
 
-        function checkStockInfo() {
-            const id = document.getElementById('saida-select').value;
-            const item = STATE.items.find(i => i.id === id);
-            const infoDiv = document.getElementById('stock-info');
-            
-            if(item) {
-                infoDiv.classList.remove('hidden');
-                document.getElementById('current-stock').innerText = item.qty;
-            } else {
-                infoDiv.classList.add('hidden');
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao carregar estoque.");
+            } finally {
+                toggleLoader(false);
             }
         }
 
-        async function registrarSaida() {
-            const id = document.getElementById('saida-select').value;
-            const qtd = document.getElementById('saida-qtd').value;
-            const motivo = document.getElementById('saida-motivo').value;
+        async function submitMovimento(tipo) {
+            // Prepara Payload
+            let payload = {};
+            if (tipo === 'entrada') {
+                payload = {
+                    id: document.getElementById('in-id').value,
+                    nome: document.getElementById('in-nome').value,
+                    categoria: document.getElementById('in-cat').value,
+                    local: document.getElementById('in-local').value,
+                    quantidade: document.getElementById('in-qtd').value,
+                    action: 'entrada' // Importante para o backend saber
+                };
+            } else {
+                const id = document.getElementById('out-select').value;
+                if(!id) return alert("Selecione um item");
+                payload = {
+                    id: id,
+                    quantidade: document.getElementById('out-qtd').value,
+                    action: 'saida'
+                };
+            }
 
-            if(!id || !qtd) return alert("Preencha os campos obrigatórios");
-            
-            // Validar frontend
-            const item = STATE.items.find(i => i.id === id);
-            if(parseInt(qtd) > item.qty) return alert("Erro: Quantidade de saída maior que estoque atual.");
-
-            // Enviar para API
+            toggleLoader(true);
             try {
                 const res = await fetch('/api/items', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ action: 'saida', id, quantidade: qtd, motivo })
+                    body: JSON.stringify(payload)
                 });
-                if(res.ok) {
-                    alert("Saída registrada!");
-                    document.getElementById('saida-select').value = "";
-                    document.getElementById('saida-qtd').value = "";
-                    fetchItems(); // Recarrega
+                
+                if (res.ok) {
+                    alert(`${tipo === 'entrada' ? 'Entrada' : 'Saída'} registrada com sucesso!`);
+                    // Limpa forms
+                    document.querySelectorAll('form').forEach(f => f.reset());
+                    navigateTo('estoque'); // Volta para lista
                 } else {
                     const err = await res.json();
-                    alert("Erro: " + err.error);
+                    alert("Erro: " + (err.error || "Desconhecido"));
                 }
-            } catch (e) { alert("Erro de rede"); }
-        }
-
-        // --- 4. IMPORTAÇÃO EXCEL (SheetJS) ---
-        function handleFile(file) {
-            if(!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1}); // Header: 1 gera array de arrays
-
-                // Remove cabeçalho e mapeia
-                // Assumindo que o Excel vem colunas: [ID, Nome, Categoria, Quantidade, Local]
-                STATE.importedItems = jsonData.slice(1).map((row, idx) => ({
-                    uuid: idx, // ID temporario para a lista
-                    checked: true, // Marcado por padrão
-                    id: row[0],
-                    name: row[1],
-                    category: row[2],
-                    qty: row[3],
-                    local: row[4],
-                    status: 'pendente'
-                })).filter(i => i.id); // Remove linhas vazias
-
-                renderImportList();
-                document.getElementById('conferencia-area').classList.remove('hidden');
-                document.getElementById('drop-area').classList.add('hidden');
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        function renderImportList() {
-            document.getElementById('count-total').innerText = STATE.importedItems.length;
-            const tbody = document.getElementById('excel-list');
-            tbody.innerHTML = STATE.importedItems.map(item => `
-                <tr class="${item.checked ? 'bg-white' : 'bg-red-50 opacity-50'} border-b">
-                    <td class="p-3"><input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleItem(${item.uuid})"></td>
-                    <td class="p-3"><span class="text-xs font-bold ${item.checked ? 'text-green-600' : 'text-red-500'}">${item.checked ? 'OK' : 'Faltante'}</span></td>
-                    <td class="p-3 font-mono text-xs">${item.id}</td>
-                    <td class="p-3">${item.name}</td>
-                    <td class="p-3 font-bold">${item.qty}</td>
-                </tr>
-            `).join('');
-        }
-
-        function toggleItem(uuid) {
-            const item = STATE.importedItems.find(i => i.uuid === uuid);
-            item.checked = !item.checked;
-            renderImportList();
-        }
-
-        async function processarImportacao() {
-            const aprovados = STATE.importedItems.filter(i => i.checked);
-            if(aprovados.length === 0) return alert("Nenhum item selecionado para importação.");
-
-            if(!confirm(`Confirmar entrada de ${aprovados.length} itens no estoque?`)) return;
-
-            // Enviar em lote (Ou um por um se sua API for simples)
-            // Aqui faremos um loop simples para o exemplo, mas ideal é Batch API
-            let sucesso = 0;
-            for (const item of aprovados) {
-                try {
-                    await fetch('/api/items', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({
-                            id: item.id, nome: item.name, categoria: item.category, 
-                            quantidade: item.quantidade, local: item.local
-                        })
-                    });
-                    sucesso++;
-                } catch(e) { console.error(e); }
-            }
-            alert(`Processo finalizado. ${sucesso} itens importados.`);
-            nav('estoque');
-        }
-
-        // --- 5. USUÁRIOS (Admin) ---
-        async function fetchUsers() {
-            const res = await fetch('/api/users');
-            const users = await res.json();
-            document.getElementById('users-body').innerHTML = users.map(u => `
-                <tr class="border-b">
-                    <td class="p-4 font-bold">${u.nome}</td>
-                    <td class="p-4 text-slate-500">${u.email}</td>
-                    <td class="p-4"><span class="bg-slate-100 px-2 py-1 rounded text-xs uppercase">${u.role}</span></td>
-                </tr>
-            `).join('');
-        }
-
-        async function criarUsuario() {
-            const nome = document.getElementById('new-user-name').value;
-            const email = document.getElementById('new-user-email').value;
-            const senha = document.getElementById('new-user-pass').value;
-            const role = document.getElementById('new-user-role').value;
-
-            const res = await fetch('/api/users', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ nome, email, senha, role })
-            });
-
-            if(res.ok) {
-                alert("Usuário criado!");
-                document.getElementById('modal-user').classList.add('hidden');
-                fetchUsers();
+            } catch (e) {
+                alert("Erro de conexão");
+            } finally {
+                toggleLoader(false);
             }
         }
+
+        // --- 4. LÓGICA DE USUÁRIOS (CRUD) ---
+        async function loadUsers() {
+            toggleLoader(true);
+            try {
+                const res = await fetch('/api/users');
+                const data = await res.json();
+                // Assumindo que api/users retorna [{rowIndex, nome, email, role}]
+                App.users = data;
+
+                const tbody = document.getElementById('table-users-body');
+                tbody.innerHTML = data.map(u => `
+                    <tr class="border-b">
+                        <td class="p-4 font-bold">${u.nome}</td>
+                        <td class="p-4 text-slate-500">${u.email}</td>
+                        <td class="p-4"><span class="bg-slate-100 px-2 py-1 rounded text-xs uppercase font-bold">${u.role}</span></td>
+                        <td class="p-4 text-right">
+                            <button onclick="alert('Função Excluir precisa ser implementada no backend')" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) { console.error(e); } finally { toggleLoader(false); }
+        }
+
+        function openUserModal() {
+            document.getElementById('modal-user').classList.remove('hidden-view');
+        }
+
+        async function saveUser() {
+            const nome = document.getElementById('modal-user-name').value;
+            const email = document.getElementById('modal-user-email').value;
+            const senha = document.getElementById('modal-user-pass').value; // Enviar apenas se for criar
+            const role = document.getElementById('modal-user-role').value;
+
+            try {
+                const res = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ nome, email, senha, role })
+                });
+                if(res.ok) {
+                    alert("Usuário salvo!");
+                    document.getElementById('modal-user').classList.add('hidden-view');
+                    loadUsers();
+                } else {
+                    alert("Erro ao salvar usuário");
+                }
+            } catch(e) { alert("Erro de rede"); }
+        }
+
+        // --- 5. PERFIL ---
+        function loadProfile() {
+            // Preenche os campos com o usuário logado (local)
+            // Idealmente buscaria dados frescos do servidor, mas para MVP usa o local
+            document.getElementById('profile-name-display').innerText = App.user.nome;
+            document.getElementById('profile-email-display').innerText = App.user.email;
+            document.getElementById('profile-avatar').innerText = App.user.nome.charAt(0).toUpperCase();
+            
+            document.getElementById('edit-profile-name').value = App.user.nome;
+            document.getElementById('read-profile-role').value = App.user.role.toUpperCase();
+        }
+
+        function saveProfile() {
+            const novoNome = document.getElementById('edit-profile-name').value;
+            if(!novoNome) return alert("Nome não pode ser vazio");
+
+            // Atualiza localmente (Para persistir, precisaria de um endpoint PUT /api/users/me)
+            App.user.nome = novoNome;
+            localStorage.setItem('logiUser', JSON.stringify(App.user));
+            
+            alert("Perfil atualizado (Localmente). Para salvar no banco, crie a rota de update.");
+            
+            // Atualiza UI
+            document.getElementById('sidebar-user-name').innerText = novoNome;
+            loadProfile();
+        }
+
+        // --- UTILS ---
+        function toggleLoader(show) {
+            const loader = document.getElementById('global-loader');
+            if(show) loader.classList.remove('hidden-view');
+            else loader.classList.add('hidden-view');
+        }
+
     </script>
 </body>
 </html>
