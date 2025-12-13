@@ -1,12 +1,24 @@
-
 {
-  "name": "logitrack-web",
+  "name": "logiweb",
   "version": "1.0.0",
+  "description": "Sistema de Gerenciamento de Inventário - JavaScript Vanilla",
+  "main": "index.html",
   "type": "module",
-  "dependencies": {
-    "googleapis": "^131.0.0"
-  },
   "scripts": {
-    "build": "echo 'Build completo!'"
+    "dev": "python3 -m http.server 8000",
+    "build": "echo 'Static project - no build needed'",
+    "start": "python3 -m http.server 8000"
+  },
+  "keywords": [
+    "inventory",
+    "stock",
+    "management",
+    "logiweb"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/logiweb"
   }
 }
