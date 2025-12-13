@@ -29,43 +29,33 @@
     </script>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans h-screen flex overflow-hidden">
-    // <// Sidebar -->
-    <aside class="w-64 bg-white border-r border-slate-200 flex flex-col z-20 shadow-sm">
-        <div class="h-16 flex items-center px-6 border-b border-slate-100 gap-3">
-            <div class="bg-brand-600 text-white p-1.5 rounded-lg">
-                <i class="fa-solid fa-box"></i>
-            </div>
-            <span class="font-display font-bold text-xl text-slate-800">LogiTrack</span>
-        </div>
-        
-        <nav class="flex-1 mt-6 px-3 space-y-1 overflow-y-auto">
-            <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-2">Visão Geral</p>
-            <button id="nav-dashboard" onclick="navigateTo('dashboard')" 
-                    class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
-                <i class="fa-solid fa-chart-pie w-5 text-center"></i> Dashboard
-            </button>
-            <button id="nav-estoque" onclick="navigateTo('estoque')" 
-                    class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
-                <i class="fa-solid fa-boxes-stacked w-5 text-center"></i> Estoque
-            </button>
-            
-            <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-6">Operação</p>
-            <button id="nav-entradas" onclick="navigateTo('entradas')" 
-                    class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
-                <i class="fa-solid fa-arrow-down w-5 text-center text-green-600"></i> Entradas
-            </button>
-            <button id="nav-saidas" onclick="navigateTo('saidas')" 
-                    class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
-                <i class="fa-solid fa-arrow-up w-5 text-center text-red-600"></i> Saídas
-            </button>
-            
-            <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-6">Sistema</p>
-            <button id="nav-perfil" onclick="navigateTo('perfil')" 
-                    class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
-                <i class="fa-solid fa-users-gear w-5 text-center"></i> Perfis
-            </button>
-        </nav>
-    </aside>
+    <nav class="flex-1 mt-6 px-3 space-y-1 overflow-y-auto">
+    <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-2">Visão Geral</p>
+    <button id="nav-dashboard" 
+            class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
+        <i class="fa-solid fa-chart-pie w-5 text-center"></i> Dashboard
+    </button>
+    <button id="nav-estoque" 
+            class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
+        <i class="fa-solid fa-boxes-stacked w-5 text-center"></i> Estoque
+    </button>
+    
+    <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-6">Operação</p>
+    <button id="nav-entradas" 
+            class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
+        <i class="fa-solid fa-arrow-down w-5 text-center text-green-600"></i> Entradas
+    </button>
+    <button id="nav-saidas" 
+            class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
+        <i class="fa-solid fa-arrow-up w-5 text-center text-red-600"></i> Saídas
+    </button>
+    
+    <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-6">Sistema</p>
+    <button id="nav-perfil" 
+            class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
+        <i class="fa-solid fa-users-gear w-5 text-center"></i> Perfis
+    </button>
+</nav>
 
     // Conteúdo Principal 
     <main class="flex-1 bg-slate-50 overflow-auto relative p-8 flex flex-col">
