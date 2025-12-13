@@ -240,6 +240,65 @@ document.addEventListener('DOMContentLoaded', () => {
     loadUserInfo();
     setupUserMenu();
 });
+
+        <script>
+// Função toggleNotif que precisa estar no escopo global
+window.toggleNotif = async () => {
+    const drop = document.getElementById('notifications-dropdown');
+    if (drop) {
+        drop.classList.toggle('hidden');
+        if(!drop.classList.contains('hidden')) {
+            try {
+                const res = await fetch('/api/movements');
+                const moves = await res.json();
+                const list = document.getElementById('notifications-list');
+                
+                if(moves.length === 0) {
+                    list.innerHTML = '<p class="p-4 text-center text-xs text-slate-400">Sem movimentações.</p>';
+                } else {
+                    list.innerHTML = moves.map(m => `
+                        <div class="px-4 py-3 border-b border-slate-50 hover:bg-slate-50">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${m.tipo === 'entrada' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                                    ${m.tipo === 'entrada' ? 'ENTRADA' : 'SAÍDA'}
+                                </span>
+                                <span class="text-[10px] text-slate-400">${new Date(m.data).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</span>
+                            </div>
+                            <p class="text-xs text-slate-700">
+                                <span class="font-bold">${m.quantidade}x</span> ${m.nomeItem || 'Item'}
+                            </p>
+                            <p class="text-[10px] text-slate-500 mt-1">${m.motivo || ''}</p>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Erro ao carregar notificações:', error);
+            }
+        }
+    }
+};
+
+// Inicializar quando a página carregar
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM carregado, iniciando app...');
+    
+    // Importar e iniciar o router
+    import('./modules/router.js').then(module => {
+        module.initApp();
+    }).catch(error => {
+        console.error('Erro ao carregar router:', error);
+        document.getElementById('app-content').innerHTML = `
+            <div class="p-8 text-center">
+                <h2 class="text-2xl font-bold text-red-600 mb-4">Erro ao carregar aplicação</h2>
+                <p class="text-slate-500">Por favor, recarregue a página.</p>
+                <button onclick="window.location.reload()" class="mt-4 bg-brand-600 text-white px-4 py-2 rounded-lg">
+                    Recarregar
+                </button>
+            </div>
+        `;
+    });
+});
+</script>
 </script>
 </body>
 </html>
