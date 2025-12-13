@@ -164,78 +164,99 @@
 </div>
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
-    <script>
-// Carregar informações do usuário
-function loadUserInfo() {
-    const user = JSON.parse(localStorage.getItem('logiUser') || '{}');
+<script type="module">
+    // Importar as funções do router
+    import { initApp, navigateTo } from './modules/router.js';
     
-    if (!user.nome) {
-        // Se não estiver logado, redirecionar para login
-        window.location.href = 'login.html';
-        return;
-    }
-    
-    // Preencher informações do usuário
-    const initials = user.nome ? user.nome.substring(0, 2).toUpperCase() : '??';
-    document.getElementById('user-avatar').textContent = initials;
-    document.getElementById('user-name').textContent = user.nome;
-    document.getElementById('dropdown-user-name').textContent = user.nome;
-    document.getElementById('dropdown-user-email').textContent = user.email || '';
-    document.getElementById('dropdown-user-role').textContent = user.role === 'admin' ? 'Administrador' : 'Usuário';
-    document.getElementById('dropdown-user-role').className = 
-        `inline-block mt-1 text-xs px-2 py-1 rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'}`;
-}
+    // Tornar navigateTo disponível globalmente
+    window.navigateTo = navigateTo;
 
-// Configurar menu do usuário
-function setupUserMenu() {
-    const btn = document.getElementById('user-menu-btn');
-    const dropdown = document.getElementById('user-menu-dropdown');
-    
-    if (!btn || !dropdown) return;
-    
-    btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        dropdown.classList.toggle('hidden');
+    // Configurar eventos dos botões da sidebar
+    document.addEventListener('DOMContentLoaded', () => {
+        // Configurar clique nos botões da sidebar
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const id = this.id; // Ex: nav-dashboard
+                const page = id.replace('nav-', ''); // Ex: dashboard
+                navigateTo(page);
+            });
+        });
+
+        // Carregar informações do usuário
+        loadUserInfo();
+        setupUserMenu();
+        
+        // Inicializar a aplicação
+        initApp();
     });
-    
-    document.addEventListener('click', () => {
-        dropdown.classList.add('hidden');
-    });
-    
-    // Logout
-    document.getElementById('btn-logout').addEventListener('click', async () => {
+
+    // Carregar informações do usuário
+    function loadUserInfo() {
         const user = JSON.parse(localStorage.getItem('logiUser') || '{}');
         
-        // Registrar logout
-        await fetch('/api/log-access', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                email: user.email,
-                nome: user.nome,
-                role: user.role,
-                action: 'logout'
-            })
+        if (!user.nome) {
+            // Se não estiver logado, redirecionar para login
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        // Preencher informações do usuário
+        const initials = user.nome ? user.nome.substring(0, 2).toUpperCase() : '??';
+        document.getElementById('user-avatar').textContent = initials;
+        document.getElementById('user-name').textContent = user.nome;
+        document.getElementById('dropdown-user-name').textContent = user.nome;
+        document.getElementById('dropdown-user-email').textContent = user.email || '';
+        document.getElementById('dropdown-user-role').textContent = user.role === 'admin' ? 'Administrador' : 'Usuário';
+        document.getElementById('dropdown-user-role').className = 
+            `inline-block mt-1 text-xs px-2 py-1 rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'}`;
+    }
+
+    // Configurar menu do usuário
+    function setupUserMenu() {
+        const btn = document.getElementById('user-menu-btn');
+        const dropdown = document.getElementById('user-menu-dropdown');
+        
+        if (!btn || !dropdown) return;
+        
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('hidden');
         });
         
-        // Limpar localStorage e redirecionar
-        localStorage.removeItem('logiUser');
-        localStorage.removeItem('logiToken');
-        window.location.href = 'login.html';
-    });
-}
+        document.addEventListener('click', () => {
+            dropdown.classList.add('hidden');
+        });
+        
+        // Logout
+        document.getElementById('btn-logout').addEventListener('click', async () => {
+            const user = JSON.parse(localStorage.getItem('logiUser') || '{}');
+            
+            // Registrar logout
+            try {
+                await fetch('/api/log-access', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: user.email,
+                        nome: user.nome,
+                        role: user.role,
+                        action: 'logout'
+                    })
+                });
+            } catch (error) {
+                console.error('Erro ao registrar logout:', error);
+            }
+            
+            // Limpar localStorage e redirecionar
+            localStorage.removeItem('logiUser');
+            localStorage.removeItem('logiToken');
+            window.location.href = 'login.html';
+        });
+    }
 
-// Inicializar quando a página carregar
-document.addEventListener('DOMContentLoaded', () => {
-    loadUserInfo();
-    setupUserMenu();
-});
-
-        <script>
-// Função toggleNotif que precisa estar no escopo global
-window.toggleNotif = async () => {
-    const drop = document.getElementById('notifications-dropdown');
-    if (drop) {
+    // Lógica do Sininho
+    window.toggleNotif = async () => {
+        const drop = document.getElementById('notifications-dropdown');
         drop.classList.toggle('hidden');
         if(!drop.classList.contains('hidden')) {
             try {
@@ -265,29 +286,10 @@ window.toggleNotif = async () => {
                 console.error('Erro ao carregar notificações:', error);
             }
         }
-    }
-};
+    };
 
-// Inicializar quando a página carregar
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM carregado, iniciando app...');
-    
-    // Importar e iniciar o router
-    import('./modules/router.js').then(module => {
-        module.initApp();
-    }).catch(error => {
-        console.error('Erro ao carregar router:', error);
-        document.getElementById('app-content').innerHTML = `
-            <div class="p-8 text-center">
-                <h2 class="text-2xl font-bold text-red-600 mb-4">Erro ao carregar aplicação</h2>
-                <p class="text-slate-500">Por favor, recarregue a página.</p>
-                <button onclick="window.location.reload()" class="mt-4 bg-brand-600 text-white px-4 py-2 rounded-lg">
-                    Recarregar
-                </button>
-            </div>
-        `;
-    });
-});
+    // Configurar clique no botão de notificações
+    document.getElementById('notifications-btn').addEventListener('click', window.toggleNotif);
 </script>
 </script>
 </body>
