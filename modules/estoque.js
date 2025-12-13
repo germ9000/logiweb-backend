@@ -1,5 +1,26 @@
 import { apiFetch, showToast } from './utils.js';
+import { apiFetch, showToast } from './utils.js';
 
+export async function render() {
+    const container = document.getElementById('app-content');
+    
+    container.innerHTML = `
+        <div class="max-w-7xl mx-auto space-y-6 pb-10">
+            <div>
+                <nav class="text-sm text-slate-400 mb-1">Home / Estoque</nav>
+                <h2 class="text-2xl font-bold text-slate-900">Estoque</h2>
+                <p class="text-slate-500">Gerencie seus itens em estoque.</p>
+            </div>
+            
+            <div class="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-slate-500 text-center py-8">
+                    <i class="fa-solid fa-box-open text-3xl mb-4 text-slate-300"></i><br>
+                    Módulo de estoque em construção...
+                </p>
+            </div>
+        </div>
+    `;
+}
 export async function render() {
     const container = document.getElementById('app-content');
     
