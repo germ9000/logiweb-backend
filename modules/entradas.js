@@ -1,6 +1,25 @@
 // modules/entradas.js
 import { apiFetch, showToast } from './utils.js';
-
+export async function render() {
+    const container = document.getElementById('app-content');
+    
+    container.innerHTML = `
+        <div class="max-w-7xl mx-auto space-y-6 pb-10">
+            <div>
+                <nav class="text-sm text-slate-400 mb-1">Operação / Entradas</nav>
+                <h2 class="text-2xl font-bold text-slate-900">Entradas</h2>
+                <p class="text-slate-500">Registre a entrada de novos itens.</p>
+            </div>
+            
+            <div class="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
+                <p class="text-slate-500 text-center py-8">
+                    <i class="fa-solid fa-arrow-down text-3xl mb-4 text-green-300"></i><br>
+                    Módulo de entradas em construção...
+                </p>
+            </div>
+        </div>
+    `;
+}
 export async function renderEntradas() {
 
     export async function renderEntradas() {
