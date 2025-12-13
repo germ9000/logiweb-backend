@@ -1,224 +1,352 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html class="light" lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LogiWeb - Gerenciamento de Inventário</title>
-
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <!-- Estilos Customizados -->
-  <style>
-    :root {
-      --primary: #0066CC;
-      --primary-dark: #0052A3;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-      --slate-50: #f8fafc;
-      --slate-100: #f1f5f9;
-      --slate-200: #e2e8f0;
-      --slate-300: #cbd5e1;
-      --slate-600: #475569;
-      --slate-900: #0f172a;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background-color: var(--slate-50);
-      color: var(--slate-900);
-    }
-
-    /* Loader Global */
-    #global-loader {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 9999;
-      align-items: center;
-      justify-content: center;
-    }
-
-    #global-loader .spinner {
-      width: 50px;
-      height: 50px;
-      border: 4px solid rgba(255, 255, 255, 0.3);
-      border-top-color: white;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    /* Animação de Toast */
-    @keyframes slideIn {
-      from {
-        transform: translateX(400px);
-        opacity: 0;
-      }
-      to {
-        transform: translateX(0);
-        opacity: 1;
-      }
-    }
-
-    #toast-container > div {
-      animation: slideIn 0.3s ease-out;
-    }
-
-    /* Scrollbar customizada */
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: var(--slate-100);
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: var(--slate-300);
-      border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--slate-400);
-    }
-
-    /* Transições suaves */
-    * {
-      transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-    }
-
-    button, input, select, textarea {
-      transition: all 0.15s ease;
-    }
-
-    button:hover {
-      transform: translateY(-1px);
-    }
-
-    button:active {
-      transform: translateY(0);
-    }
-
-    /* Focus states */
-    input:focus, select:focus, textarea:focus {
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
-    }
-  </style>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Dashboard - Logística Web</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    
+    <!-- Theme Configuration -->
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1a2632",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 4px;
+        }
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+    </style>
 </head>
-<body>
-  <!-- Loader Global -->
-  <div id="global-loader">
-    <div class="spinner"></div>
-  </div>
-
-  <!-- Container Principal -->
-  <div class="flex h-screen bg-slate-50">
-    <!-- Sidebar -->
-    <aside class="w-64 bg-white border-r border-slate-200 flex flex-col shadow-sm">
-      <!-- Logo -->
-      <div class="p-6 border-b border-slate-200">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-            <i class="fas fa-boxes text-white text-lg"></i>
-          </div>
-          <div>
-            <h1 class="text-lg font-bold text-slate-900">LogiWeb</h1>
-            <p class="text-xs text-slate-600">Inventário</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Navegação -->
-      <nav class="flex-1 p-4 space-y-2">
-        <button data-route="dashboard" class="w-full text-left px-4 py-3 rounded-lg font-medium flex items-center gap-3 text-slate-700 hover:bg-slate-100 transition">
-          <i class="fas fa-chart-line w-5"></i>
-          <span>Dashboard</span>
-        </button>
-        <button data-route="entradas" class="w-full text-left px-4 py-3 rounded-lg font-medium flex items-center gap-3 text-slate-700 hover:bg-slate-100 transition">
-          <i class="fas fa-arrow-down w-5 text-green-600"></i>
-          <span>Entradas</span>
-        </button>
-        <button data-route="saidas" class="w-full text-left px-4 py-3 rounded-lg font-medium flex items-center gap-3 text-slate-700 hover:bg-slate-100 transition">
-          <i class="fas fa-arrow-up w-5 text-red-600"></i>
-          <span>Saídas</span>
-        </button>
-        <button data-route="historico" class="w-full text-left px-4 py-3 rounded-lg font-medium flex items-center gap-3 text-slate-700 hover:bg-slate-100 transition">
-          <i class="fas fa-history w-5"></i>
-          <span>Histórico</span>
-        </button>
-      </nav>
-
-      <!-- Footer -->
-      <div class="p-4 border-t border-slate-200">
-        <div class="bg-slate-50 rounded-lg p-3 text-center">
-          <p class="text-xs text-slate-600 font-medium">v1.0.0</p>
-          <p class="text-xs text-slate-500 mt-1">Sistema de Gestão</p>
-        </div>
-      </div>
-    </aside>
-
-    <!-- Conteúdo Principal -->
-    <div class="flex-1 flex flex-col overflow-hidden">
-      <!-- Header -->
-      <header class="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between shadow-sm">
-        <div>
-          <h2 id="page-title" class="text-xl font-bold text-slate-900">Dashboard</h2>
-        </div>
-        <div class="flex items-center gap-4">
-          <div class="relative hidden sm:block">
-            <input type="text" placeholder="Buscar..." class="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <i class="fas fa-search absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
-          </div>
-          <button class="relative p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition">
-            <i class="fas fa-bell text-lg"></i>
-            <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
-          <button class="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition">
-            <i class="fas fa-user-circle text-lg"></i>
-          </button>
-        </div>
-      </header>
-
-      <!-- Conteúdo -->
-      <main class="flex-1 overflow-auto p-8">
-        <div id="app-content" class="max-w-7xl mx-auto">
-          <!-- Preenchido dinamicamente pelo router -->
-        </div>
-      </main>
+<body class="bg-background-light dark:bg-background-dark text-[#111418] dark:text-white transition-colors duration-200">
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+        <!-- Top Navigation Bar -->
+        <header class="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-solid border-gray-200 dark:border-gray-800 bg-surface-light dark:bg-surface-dark px-10 py-3 shadow-sm">
+            <div class="flex items-center gap-4 text-[#111418] dark:text-white">
+                <div class="flex items-center justify-center size-10 rounded-lg bg-primary/10 text-primary">
+                    <span class="material-symbols-outlined text-3xl">inventory_2</span>
+                </div>
+                <h2 class="text-lg font-bold leading-tight tracking-[-0.015em]">Logística Web</h2>
+            </div>
+            
+            <div class="flex flex-1 justify-end gap-8">
+                <!-- Navigation Links -->
+                <nav class="hidden lg:flex items-center gap-9">
+                    <a class="text-primary text-sm font-bold leading-normal relative after:content-[''] after:absolute after:-bottom-5 after:left-0 after:w-full after:h-0.5 after:bg-primary" href="index.html">Dashboard</a>
+                    <a class="text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary text-sm font-medium leading-normal transition-colors" href="pages/estoque.html">Estoque</a>
+                    <a class="text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary text-sm font-medium leading-normal transition-colors" href="pages/entradas.html">Entradas</a>
+                    <a class="text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary text-sm font-medium leading-normal transition-colors" href="pages/saidas.html">Saídas</a>
+                    <a class="text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary text-sm font-medium leading-normal transition-colors" href="pages/historico.html">Histórico</a>
+                    <a class="text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary text-sm font-medium leading-normal transition-colors" href="pages/usuarios.html">Usuários</a>
+                </nav>
+                
+                <!-- User Profile -->
+                <div class="flex items-center gap-4">
+                    <button class="flex items-center gap-2" onclick="toggleTheme()">
+                        <span class="material-symbols-outlined text-gray-600 dark:text-gray-300 hover:text-primary">brightness_4</span>
+                    </button>
+                    <button class="flex items-center gap-2">
+                        <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-9 border-2 border-white dark:border-gray-700 shadow-sm" style='background-image: url("https://ui-avatars.com/api/?name=Admin&background=137fec&color=fff");'></div>
+                        <span class="material-symbols-outlined text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">expand_more</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+ 
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col items-center py-8 px-4 sm:px-10 lg:px-20">
+            <div class="w-full max-w-7xl flex flex-col gap-6">
+                <!-- Breadcrumbs & Heading -->
+                <div class="flex flex-col gap-2">
+                    <div class="flex flex-wrap gap-2 items-center text-sm">
+                        <span class="text-[#111418] dark:text-white font-medium">Dashboard</span>
+                    </div>
+                    <h1 class="text-4xl font-bold leading-tight tracking-[-0.015em]">Bem-vindo ao Logística Web</h1>
+                    <p class="text-gray-600 dark:text-gray-300 text-base">Gerencie seu estoque com eficiência e precisão</p>
+                </div>
+ 
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Total Items -->
+                    <div class="stat-card flex flex-col gap-3 rounded-2xl border border-gray-200 dark:border-gray-800 bg-surface-light dark:bg-surface-dark p-6">
+                        <div class="flex items-center justify-between">
+                            <div class="flex flex-col gap-1">
+                                <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">Total de Itens</p>
+                                <p class="text-3xl font-bold" id="totalItems">-</p>
+                            </div>
+                            <div class="flex items-center justify-center size-12 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600">
+                                <span class="material-symbols-outlined">inventory_2</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-500 dark:text-gray-400 text-xs">Produtos cadastrados</p>
+                    </div>
+ 
+                    <!-- Low Stock -->
+                    <div class="stat-card flex flex-col gap-3 rounded-2xl border border-gray-200 dark:border-gray-800 bg-surface-light dark:bg-surface-dark p-6">
+                        <div class="flex items-center justify-between">
+                            <div class="flex flex-col gap-1">
+                                <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">Estoque Baixo</p>
+                                <p class="text-3xl font-bold" id="lowStock">-</p>
+                            </div>
+                            <div class="flex items-center justify-center size-12 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600">
+                                <span class="material-symbols-outlined">warning</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-500 dark:text-gray-400 text-xs">Itens com quantidade baixa</p>
+                    </div>
+ 
+                    <!-- Today Movements -->
+                    <div class="stat-card flex flex-col gap-3 rounded-2xl border border-gray-200 dark:border-gray-800 bg-surface-light dark:bg-surface-dark p-6">
+                        <div class="flex items-center justify-between">
+                            <div class="flex flex-col gap-1">
+                                <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">Movimentações Hoje</p>
+                                <p class="text-3xl font-bold" id="todayMovements">-</p>
+                            </div>
+                            <div class="flex items-center justify-center size-12 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600">
+                                <span class="material-symbols-outlined">trending_up</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-500 dark:text-gray-400 text-xs">Entradas e saídas</p>
+                    </div>
+ 
+                    <!-- Active Users -->
+                    <div class="stat-card flex flex-col gap-3 rounded-2xl border border-gray-200 dark:border-gray-800 bg-surface-light dark:bg-surface-dark p-6">
+                        <div class="flex items-center justify-between">
+                            <div class="flex flex-col gap-1">
+                                <p class="text-gray-600 dark:text-gray-400 text-sm font-medium">Usuários Ativos</p>
+                                <p class="text-3xl font-bold" id="activeUsers">-</p>
+                            </div>
+                            <div class="flex items-center justify-center size-12 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-600">
+                                <span class="material-symbols-outlined">people</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-500 dark:text-gray-400 text-xs">Usuários do sistema</p>
+                    </div>
+                </div>
+ 
+                <!-- Quick Actions -->
+                <div class="flex flex-col gap-4">
+                    <h3 class="text-lg font-bold">Ações Rápidas</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <a href="pages/entradas.html" class="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-surface-light dark:bg-surface-dark p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                            <span class="material-symbols-outlined text-primary text-2xl">add_circle</span>
+                            <div>
+                                <p class="font-medium">Nova Entrada</p>
+                                <p class="text-xs text-gray-500">Adicionar itens</p>
+                            </div>
+                        </a>
+                        
+                        <a href="pages/saidas.html" class="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-surface-light dark:bg-surface-dark p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                            <span class="material-symbols-outlined text-primary text-2xl">remove_circle</span>
+                            <div>
+                                <p class="font-medium">Nova Saída</p>
+                                <p class="text-xs text-gray-500">Remover itens</p>
+                            </div>
+                        </a>
+                        
+                        <a href="pages/estoque.html" class="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-surface-light dark:bg-surface-dark p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                            <span class="material-symbols-outlined text-primary text-2xl">inventory</span>
+                            <div>
+                                <p class="font-medium">Ver Estoque</p>
+                                <p class="text-xs text-gray-500">Consultar disponibilidade</p>
+                            </div>
+                        </a>
+                        
+                        <a href="pages/historico.html" class="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-surface-light dark:bg-surface-dark p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                            <span class="material-symbols-outlined text-primary text-2xl">history</span>
+                            <div>
+                                <p class="font-medium">Histórico</p>
+                                <p class="text-xs text-gray-500">Ver movimentações</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+ 
+                <!-- Recent Movements -->
+                <div class="flex flex-col gap-4">
+                    <h3 class="text-lg font-bold">Movimentações Recentes</h3>
+                    <div class="rounded-lg border border-gray-200 dark:border-gray-800 bg-surface-light dark:bg-surface-dark overflow-hidden">
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="border-b border-gray-200 dark:border-gray-800">
+                                        <th class="text-left px-6 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">ID</th>
+                                        <th class="text-left px-6 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Produto</th>
+                                        <th class="text-left px-6 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Tipo</th>
+                                        <th class="text-left px-6 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Quantidade</th>
+                                        <th class="text-left px-6 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Data/Hora</th>
+                                        <th class="text-left px-6 py-3 text-sm font-semibold text-gray-600 dark:text-gray-400">Usuário</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentMovementsTable">
+                                    <tr>
+                                        <td colspan="6" class="text-center px-6 py-8 text-gray-500">Carregando...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
-  </div>
-
-  <!-- Scripts -->
-  <script type="module">
-    import { initApp } from './modules/router.js';
-
-    // Inicializa a aplicação quando o DOM estiver pronto
-    document.addEventListener('DOMContentLoaded', () => {
-      initApp();
-    });
-  </script>
+ 
+    <!-- Scripts -->
+    <script src="logiweb-config.js"></script>
+    <script src="logiweb-api.js"></script>
+    <script>
+        // Inicializar API
+        let api = null;
+ 
+        async function initDashboard() {
+            try {
+                // Validar configuração
+                if (!validateConfig()) {
+                    alert('⚠️ Erro: Chave API do Google Sheets não configurada!
+ 
+Edite o arquivo logiweb-config.js e adicione sua chave API.');
+                    return;
+                }
+ 
+                // Inicializar API
+                api = initializeAPI(CONFIG);
+ 
+                // Carregar dados
+                await loadDashboardData();
+            } catch (error) {
+                console.error('Erro ao inicializar dashboard:', error);
+                alert('Erro ao carregar dados. Verifique a configuração e tente novamente.');
+            }
+        }
+ 
+        async function loadDashboardData() {
+            try {
+                // Carregar itens
+                const items = await api.getItems();
+                document.getElementById('totalItems').textContent = items.length;
+ 
+                // Contar itens com estoque baixo
+                const lowStockCount = items.filter(item => {
+                    const qty = parseInt(item['Quantidade'] || item['quantidade'] || 0);
+                    return qty < 10; // Considerar baixo estoque < 10
+                }).length;
+                document.getElementById('lowStock').textContent = lowStockCount;
+ 
+                // Carregar movimentações
+                const movements = await api.getMovements();
+                
+                // Contar movimentações de hoje
+                const today = new Date().toDateString();
+                const todayMovements = movements.filter(mov => {
+                    const movDate = new Date(mov['Data'] || mov['data']).toDateString();
+                    return movDate === today;
+                }).length;
+                document.getElementById('todayMovements').textContent = todayMovements;
+ 
+                // Carregar usuários
+                const users = await api.getUsers();
+                document.getElementById('activeUsers').textContent = users.length;
+ 
+                // Carregar movimentações recentes
+                loadRecentMovements(movements.slice(0, 5));
+            } catch (error) {
+                console.error('Erro ao carregar dados do dashboard:', error);
+            }
+        }
+ 
+        function loadRecentMovements(movements) {
+            const tbody = document.getElementById('recentMovementsTable');
+            
+            if (movements.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center px-6 py-8 text-gray-500">Nenhuma movimentação encontrada</td></tr>';
+                return;
+            }
+ 
+            tbody.innerHTML = movements.map(mov => `
+                <tr class="border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                    <td class="px-6 py-3 text-sm">${mov['ID Movimentação'] || mov['id'] || '-'}</td>
+                    <td class="px-6 py-3 text-sm">${mov['Produto'] || mov['produto'] || '-'}</td>
+                    <td class="px-6 py-3 text-sm">
+                        <span class="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${
+                            (mov['Tipo'] || mov['tipo'] || '').toLowerCase().includes('entrada') 
+                                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' 
+                                : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300'
+                        }">
+                            ${mov['Tipo'] || mov['tipo'] || '-'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-3 text-sm">${mov['Quantidade'] || mov['quantidade'] || '-'}</td>
+                    <td class="px-6 py-3 text-sm text-gray-500">${mov['Data / Hora'] || mov['data'] || '-'}</td>
+                    <td class="px-6 py-3 text-sm">${mov['Usuário'] || mov['usuario'] || '-'}</td>
+                </tr>
+            `).join('');
+        }
+ 
+        function toggleTheme() {
+            const html = document.documentElement;
+            html.classList.toggle('dark');
+            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+        }
+ 
+        // Restaurar tema salvo
+        function restoreTheme() {
+            const theme = localStorage.getItem('theme') || 'light';
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            }
+        }
+ 
+        // Inicializar ao carregar a página
+        restoreTheme();
+        initDashboard();
+    </script>
 </body>
 </html>
