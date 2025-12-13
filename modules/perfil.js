@@ -1,5 +1,85 @@
 import { apiFetch, showToast } from './utils.js';
+export async function render() {
+    const user = JSON.parse(localStorage.getItem('logiUser') || '{}');
+    
+    const container = document.getElementById('app-content');
+    
+    container.innerHTML = `
+        <div class="max-w-7xl mx-auto space-y-6 pb-10">
+            <div>
+                <nav class="text-sm text-slate-400 mb-1">Sistema / Perfil</nav>
+                <h2 class="text-2xl font-bold text-slate-900">Meu Perfil</h2>
+                <p class="text-slate-500">Gerencie suas informações de usuário.</p>
+            </div>
+            
+            <div class="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
+                <div class="max-w-md mx-auto">
+                    <div class="text-center mb-8">
+                        <div class="w-24 h-24 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center text-3xl font-bold mx-auto mb-4">
+                            ${user.nome ? user.nome.substring(0, 2).toUpperCase() : 'US'}
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800">${user.nome || 'Usuário'}</h3>
+                        <p class="text-slate-500">${user.email || 'Não informado'}</p>
+                        <span class="inline-block mt-2 px-3 py-1 rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'} text-sm">
+                            ${user.role === 'admin' ? 'Administrador' : 'Usuário'}
+                        </span>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Nome completo</label>
+                            <input type="text" value="${user.nome || ''}" 
+                                   class="w-full border-slate-300 rounded-lg p-3 bg-slate-50" readonly>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Email</label>
+                            <input type="email" value="${user.email || ''}" 
+                                   class="w-full border-slate-300 rounded-lg p-3 bg-slate-50" readonly>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-1">Tipo de usuário</label>
+                            <input type="text" value="${user.role === 'admin' ? 'Administrador' : 'Usuário Comum'}" 
+                                   class="w-full border-slate-300 rounded-lg p-3 bg-slate-50" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 pt-6 border-t border-slate-200">
+                        <button onclick="logout()" 
+                                class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg">
+                            <i class="fa-solid fa-right-from-bracket mr-2"></i> Sair da Conta
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
 
+// Função de logout (adicionar ao escopo global)
+window.logout = async function() {
+    const user = JSON.parse(localStorage.getItem('logiUser') || '{}');
+    
+    try {
+        await fetch('/api/log-access', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: user.email,
+                nome: user.nome,
+                role: user.role,
+                action: 'logout'
+            })
+        });
+    } catch (error) {
+        console.log('Erro ao registrar logout:', error);
+    }
+    
+    localStorage.removeItem('logiUser');
+    localStorage.removeItem('logiToken');
+    window.location.href = 'login.html';
+};
 export async function renderPerfil() {
   const container = document.getElementById('app-content');
   const user = JSON.parse(localStorage.getItem('logiUser') || '{}');
