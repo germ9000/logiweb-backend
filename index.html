@@ -1,296 +1,224 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LogiTrack Web</title>
-    <script src="https://cdn.tailwindcss.com/3.4.1"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        tailwind.config = {
-            theme: { 
-                extend: { 
-                    colors: { 
-                        brand: { 
-                            50: '#eff6ff',
-                            500: '#1a73e8', 
-                            600: '#1557b0' 
-                        } 
-                    }, 
-                    fontFamily: { 
-                        sans: ['Inter', 'sans-serif'], 
-                        display: ['Poppins', 'sans-serif'] 
-                    } 
-                } 
-            }
-        }
-    </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LogiWeb - Gerenciamento de Inventário</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Estilos Customizados -->
+  <style>
+    :root {
+      --primary: #0066CC;
+      --primary-dark: #0052A3;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-300: #cbd5e1;
+      --slate-600: #475569;
+      --slate-900: #0f172a;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: var(--slate-50);
+      color: var(--slate-900);
+    }
+
+    /* Loader Global */
+    #global-loader {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #global-loader .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Animação de Toast */
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    #toast-container > div {
+      animation: slideIn 0.3s ease-out;
+    }
+
+    /* Scrollbar customizada */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--slate-100);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--slate-300);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--slate-400);
+    }
+
+    /* Transições suaves */
+    * {
+      transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    button, input, select, textarea {
+      transition: all 0.15s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    /* Focus states */
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+    }
+  </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans h-screen flex overflow-hidden">
-    <nav class="flex-1 mt-6 px-3 space-y-1 overflow-y-auto">
-    <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-2">Visão Geral</p>
-    <button id="nav-dashboard" 
-            class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
-        <i class="fa-solid fa-chart-pie w-5 text-center"></i> Dashboard
-    </button>
-    <button id="nav-estoque" 
-            class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
-        <i class="fa-solid fa-boxes-stacked w-5 text-center"></i> Estoque
-    </button>
-    
-    <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-6">Operação</p>
-    <button id="nav-entradas" 
-            class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
-        <i class="fa-solid fa-arrow-down w-5 text-center text-green-600"></i> Entradas
-    </button>
-    <button id="nav-saidas" 
-            class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
-        <i class="fa-solid fa-arrow-up w-5 text-center text-red-600"></i> Saídas
-    </button>
-    
-    <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 mt-6">Sistema</p>
-    <button id="nav-perfil" 
-            class="nav-btn w-full text-left px-4 py-3 text-slate-600 hover:bg-slate-50 font-medium transition flex items-center gap-3 rounded-lg">
-        <i class="fa-solid fa-users-gear w-5 text-center"></i> Perfis
-    </button>
-</nav>
+<body>
+  <!-- Loader Global -->
+  <div id="global-loader">
+    <div class="spinner"></div>
+  </div>
 
-    // Conteúdo Principal 
-    <main class="flex-1 bg-slate-50 overflow-auto relative p-8 flex flex-col">
-        <// Header com Notificações -->
-        <header class="flex justify-end mb-6">
-            <div class="relative">
-                <button id="notifications-btn" class="relative p-2 text-slate-500 hover:text-slate-700">
-                    <i class="fa-solid fa-bell text-xl"></i>
-                    <span id="notification-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
-                </button>
-                
-                <// Dropdown de Notificações -->
-                <div id="notifications-dropdown" class="hidden absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-2xl border border-slate-200 z-50">
-                    <div class="p-4 border-b border-slate-100 flex justify-between items-center">
-                        <h3 class="font-bold text-slate-800">Histórico de Movimentações</h3>
-                        <button id="mark-all-read" class="text-xs text-brand-600 font-bold">Marcar todas como lidas</button>
-                    </div>
-                    <div id="notifications-list" class="max-h-96 overflow-y-auto">
-                        <div class="p-4 text-center text-slate-400">
-                            <i class="fa-solid fa-clock text-2xl mb-2"></i>
-                            <p>Carregando histórico...</p>
-                        </div>
-                    </div>
-                    <div class="p-3 border-t border-slate-100 text-center">
-                        <button onclick="navigateTo('historico')" class="text-sm text-brand-600 font-bold">
-                            Ver histórico completo
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </header>
+  <!-- Container Principal -->
+  <div class="flex h-screen bg-slate-50">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-slate-200 flex flex-col shadow-sm">
+      <!-- Logo -->
+      <div class="p-6 border-b border-slate-200">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+            <i class="fas fa-boxes text-white text-lg"></i>
+          </div>
+          <div>
+            <h1 class="text-lg font-bold text-slate-900">LogiWeb</h1>
+            <p class="text-xs text-slate-600">Inventário</p>
+          </div>
+        </div>
+      </div>
 
-        <// Área de Conteúdo -->
-        <div id="app-content" class="animate-fade-in flex-1"></div>
-        
-        <// Loader Global -->
-        <div id="global-loader" class="absolute inset-0 bg-white/80 z-50 hidden flex-col items-center justify-center backdrop-blur-sm">
-            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-brand-500 mb-4"></i>
-            <p class="text-slate-600">Carregando...</p>
-        </div>
-    </main>
+      <!-- Navegação -->
+      <nav class="flex-1 p-4 space-y-2">
+        <button data-route="dashboard" class="w-full text-left px-4 py-3 rounded-lg font-medium flex items-center gap-3 text-slate-700 hover:bg-slate-100 transition">
+          <i class="fas fa-chart-line w-5"></i>
+          <span>Dashboard</span>
+        </button>
+        <button data-route="entradas" class="w-full text-left px-4 py-3 rounded-lg font-medium flex items-center gap-3 text-slate-700 hover:bg-slate-100 transition">
+          <i class="fas fa-arrow-down w-5 text-green-600"></i>
+          <span>Entradas</span>
+        </button>
+        <button data-route="saidas" class="w-full text-left px-4 py-3 rounded-lg font-medium flex items-center gap-3 text-slate-700 hover:bg-slate-100 transition">
+          <i class="fas fa-arrow-up w-5 text-red-600"></i>
+          <span>Saídas</span>
+        </button>
+        <button data-route="historico" class="w-full text-left px-4 py-3 rounded-lg font-medium flex items-center gap-3 text-slate-700 hover:bg-slate-100 transition">
+          <i class="fas fa-history w-5"></i>
+          <span>Histórico</span>
+        </button>
+      </nav>
 
-    <// Scripts -->
-    <script type="module">
-        import { initApp, navigateTo } from './modules/router.js';
-        window.navigateTo = navigateTo;
-        
-        // Lógica do Sininho
-        window.toggleNotif = async () => {
-            const drop = document.getElementById('notifications-dropdown');
-            drop.classList.toggle('hidden');
-            if(!drop.classList.contains('hidden')) {
-                const res = await fetch('/api/movements');
-                const moves = await res.json();
-                const list = document.getElementById('notifications-list');
-                
-                if(moves.length === 0) {
-                    list.innerHTML = '<p class="p-4 text-center text-xs text-slate-400">Sem movimentações.</p>';
-                } else {
-                    list.innerHTML = moves.map(m => `
-                        <div class="px-4 py-3 border-b border-slate-50 hover:bg-slate-50">
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${m.tipo === 'entrada' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
-                                    ${m.tipo === 'entrada' ? 'ENTRADA' : 'SAÍDA'}
-                                </span>
-                                <span class="text-[10px] text-slate-400">${new Date(m.data).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</span>
-                            </div>
-                            <p class="text-xs text-slate-700">
-                                <span class="font-bold">${m.quantidade}x</span> ${m.nomeItem || 'Item'}
-                            </p>
-                            <p class="text-[10px] text-slate-500 mt-1">${m.motivo || ''}</p>
-                        </div>
-                    `).join('');
-                }
-            }
-        }
-<// Botão de perfil do usuário -->
-<div class="relative ml-4">
-    <button id="user-menu-btn" class="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 transition">
-        <div id="user-avatar" class="w-8 h-8 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center font-bold">
-            <// Iniciais serão preenchidas por JS -->
+      <!-- Footer -->
+      <div class="p-4 border-t border-slate-200">
+        <div class="bg-slate-50 rounded-lg p-3 text-center">
+          <p class="text-xs text-slate-600 font-medium">v1.0.0</p>
+          <p class="text-xs text-slate-500 mt-1">Sistema de Gestão</p>
         </div>
-        <span id="user-name" class="text-sm font-bold text-slate-700 max-w-32 truncate"></span>
-        <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
-    </button>
-    
-    <// Dropdown do usuário -->
-    <div id="user-menu-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-slate-200 z-50">
-        <div class="p-4 border-b border-slate-100">
-            <p id="dropdown-user-name" class="font-bold text-slate-800"></p>
-            <p id="dropdown-user-email" class="text-xs text-slate-500 truncate"></p>
-            <span id="dropdown-user-role" class="inline-block mt-1 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600"></span>
+      </div>
+    </aside>
+
+    <!-- Conteúdo Principal -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Header -->
+      <header class="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between shadow-sm">
+        <div>
+          <h2 id="page-title" class="text-xl font-bold text-slate-900">Dashboard</h2>
         </div>
-        <div class="p-2">
-            <button onclick="navigateTo('perfil')" class="w-full text-left px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm">
-                <i class="fa-solid fa-user-gear mr-2"></i> Meu Perfil
-            </button>
-            <button onclick="navigateTo('historico-acesso')" class="w-full text-left px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm">
-                <i class="fa-solid fa-clock-rotate-left mr-2"></i> Histórico
-            </button>
-            <button id="btn-logout" class="w-full text-left px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm mt-1">
-                <i class="fa-solid fa-right-from-bracket mr-2"></i> Sair
-            </button>
+        <div class="flex items-center gap-4">
+          <div class="relative hidden sm:block">
+            <input type="text" placeholder="Buscar..." class="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <i class="fas fa-search absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+          </div>
+          <button class="relative p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition">
+            <i class="fas fa-bell text-lg"></i>
+            <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+          </button>
+          <button class="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition">
+            <i class="fas fa-user-circle text-lg"></i>
+          </button>
         </div>
+      </header>
+
+      <!-- Conteúdo -->
+      <main class="flex-1 overflow-auto p-8">
+        <div id="app-content" class="max-w-7xl mx-auto">
+          <!-- Preenchido dinamicamente pelo router -->
+        </div>
+      </main>
     </div>
-</div>
-        document.addEventListener('DOMContentLoaded', initApp);
-    </script>
-<script type="module">
-    // Importar as funções do router
-    import { initApp, navigateTo } from './modules/router.js';
-    
-    // Tornar navigateTo disponível globalmente
-    window.navigateTo = navigateTo;
+  </div>
 
-    // Configurar eventos dos botões da sidebar
+  <!-- Scripts -->
+  <script type="module">
+    import { initApp } from './modules/router.js';
+
+    // Inicializa a aplicação quando o DOM estiver pronto
     document.addEventListener('DOMContentLoaded', () => {
-        // Configurar clique nos botões da sidebar
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const id = this.id; // Ex: nav-dashboard
-                const page = id.replace('nav-', ''); // Ex: dashboard
-                navigateTo(page);
-            });
-        });
-
-        // Carregar informações do usuário
-        loadUserInfo();
-        setupUserMenu();
-        
-        // Inicializar a aplicação
-        initApp();
+      initApp();
     });
-
-    // Carregar informações do usuário
-    function loadUserInfo() {
-        const user = JSON.parse(localStorage.getItem('logiUser') || '{}');
-        
-        if (!user.nome) {
-            // Se não estiver logado, redirecionar para login
-            window.location.href = 'login.html';
-            return;
-        }
-        
-        // Preencher informações do usuário
-        const initials = user.nome ? user.nome.substring(0, 2).toUpperCase() : '??';
-        document.getElementById('user-avatar').textContent = initials;
-        document.getElementById('user-name').textContent = user.nome;
-        document.getElementById('dropdown-user-name').textContent = user.nome;
-        document.getElementById('dropdown-user-email').textContent = user.email || '';
-        document.getElementById('dropdown-user-role').textContent = user.role === 'admin' ? 'Administrador' : 'Usuário';
-        document.getElementById('dropdown-user-role').className = 
-            `inline-block mt-1 text-xs px-2 py-1 rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'}`;
-    }
-
-    // Configurar menu do usuário
-    function setupUserMenu() {
-        const btn = document.getElementById('user-menu-btn');
-        const dropdown = document.getElementById('user-menu-dropdown');
-        
-        if (!btn || !dropdown) return;
-        
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            dropdown.classList.toggle('hidden');
-        });
-        
-        document.addEventListener('click', () => {
-            dropdown.classList.add('hidden');
-        });
-        
-        // Logout
-        document.getElementById('btn-logout').addEventListener('click', async () => {
-            const user = JSON.parse(localStorage.getItem('logiUser') || '{}');
-            
-            // Registrar logout
-            try {
-                await fetch('/api/log-access', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        email: user.email,
-                        nome: user.nome,
-                        role: user.role,
-                        action: 'logout'
-                    })
-                });
-            } catch (error) {
-                console.error('Erro ao registrar logout:', error);
-            }
-            
-            // Limpar localStorage e redirecionar
-            localStorage.removeItem('logiUser');
-            localStorage.removeItem('logiToken');
-            window.location.href = 'login.html';
-        });
-    }
-
-    // Lógica do Sininho
-    window.toggleNotif = async () => {
-        const drop = document.getElementById('notifications-dropdown');
-        drop.classList.toggle('hidden');
-        if(!drop.classList.contains('hidden')) {
-            try {
-                const res = await fetch('/api/movements');
-                const moves = await res.json();
-                const list = document.getElementById('notifications-list');
-                
-                if(moves.length === 0) {
-                    list.innerHTML = '<p class="p-4 text-center text-xs text-slate-400">Sem movimentações.</p>';
-                } else {
-                    list.innerHTML = moves.map(m => `
-                        <div class="px-4 py-3 border-b border-slate-50 hover:bg-slate-50">
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${m.tipo === 'entrada' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
-                                    ${m.tipo === 'entrada' ? 'ENTRADA' : 'SAÍDA'}
-                                </span>
-                                <span class="text-[10px] text-slate-400">${new Date(m.data).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</span>
-                            </div>
-                            <p class="text-xs text-slate-700">
-                                <span class="font-bold">${m.quantidade}x</span> ${m.nomeItem || 'Item'}
-                            </p>
-                            <p class="text-[10px] text-slate-500 mt-1">${m.motivo || ''}</p>
-                        </div>
-                    `).join('');
-                }
-            } catch (error) {
-                console.error('Erro ao carregar notificações:', error);
-            }
-        }
-    };
-
-    // Configurar clique no botão de notificações
-    document.getElementById('notifications-btn').addEventListener('click', window.toggleNotif);
-</script>
-</script>
+  </script>
 </body>
 </html>
